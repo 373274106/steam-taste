@@ -404,14 +404,17 @@ def recommend_owned(steamid: int, k: int = 15, max_playtime_hours: float = 2.0):
 # ============================================================
 
 @app.get("/api/taste/{steamid}/regret")
-def regret_endpoint(steamid: int):
+def regret_endpoint(steamid: int, lang: str = "zh"):
+    if lang not in ("zh", "en"):
+        # Unknown locale → fall back to zh rather than erroring out.
+        lang = "zh"
     eng = get_engine()
     try:
         library = _library_tuples(steamid)
     except SteamApiError as e:
         raise HTTPException(403, str(e))
 
-    report = detect_regret(eng, library)
+    report = detect_regret(eng, library, lang=lang)
 
     def serialize(c):
         return {

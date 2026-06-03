@@ -1,0 +1,167 @@
+{
+  "masthead": {
+    "brandSuffix": "Steam 版",
+    "back": "重新开始",
+    "lang": { "en": "EN", "zh": "中" }
+  },
+  "home": {
+    "hero": {
+      "kicker": "一份玩家档案，三幕呈现",
+      "catalog": "目录号 · pp-01",
+      "intro": "像一个真在玩游戏的朋友那样读你的 Steam 库。三幕安静的章节——你爱的、你搁置的、你悄悄不再属于的类型。"
+    },
+    "chooseEntry": "选择入口",
+    "entry1": {
+      "title": "用 Steam 登录",
+      "subtitle": "通过 OpenID——浏览器里当前登录的 Steam 账号即决定身份。"
+    },
+    "entry2": {
+      "title": "贴一个 Steam ID",
+      "subtitle": "Profile URL、SteamID64 或自定义昵称——账号资料需公开。",
+      "placeholder": "steamcommunity.com/id/...",
+      "submit": "开始 ▸",
+      "submitting": "..."
+    },
+    "entry3": {
+      "title": "试一下示例玩家",
+      "subtitle": "26 款游戏 · 偏 roguelite · 含几款冲动消费 · 无需 Steam 账号。"
+    },
+    "errors": {
+      "authFailed": "Steam 登录回调没回来。试试粘贴模式或下面的示例。",
+      "resolveFailed": "无法解析这个账号。"
+    },
+    "footer": {
+      "privacyLabel": "隐私",
+      "privacyBody": "账号资料和游戏详情都需要公开。每次请求都现拉库，从不存储。",
+      "howLabel": "工作原理",
+      "howBody": "TF-IDF 标签相似度 + 自训练 50 维 PPMI 嵌入 + HDBSCAN 聚类。纯 numpy，无 LLM。",
+      "colophonLabel": "排印",
+      "colophonPrefix": "字体：Pixelify Sans + Hanken Grotesk。",
+      "githubLink": "GitHub 源代码 ↗"
+    }
+  },
+  "result": {
+    "playerProfile": "玩家档案",
+    "demoTag": "· 示例",
+    "games": "款游戏",
+    "hours": "小时",
+    "sidLabel": "SID",
+    "acts": {
+      "i": { "kicker": "第一幕", "label": "你的品味" },
+      "ii": { "kicker": "第二幕", "label": "你会爱的游戏" },
+      "iii": { "kicker": "第三幕", "label": "悄悄不再属于的" }
+    }
+  },
+  "taste": {
+    "kicker": "第一幕 · 你的品味，一句话概括",
+    "fallbackSentence": "你的品味画像还在形成中。",
+    "stats": {
+      "confidence": "置信度",
+      "corpusMatch": "语料覆盖",
+      "coverage": "覆盖率"
+    },
+    "tagAffinity": {
+      "kicker": "§01",
+      "heading": "标签亲和度",
+      "metric": "时长加权 · idf 缩放",
+      "radarLabel": "前 8 轴",
+      "rankedLabel": "前 12 排序"
+    },
+    "clusters": {
+      "kicker": "§02",
+      "heading": "你的库，分簇视角",
+      "profileNo": "档案 #",
+      "regretFlag": "regret 模式",
+      "totalHours": "共 {{hours}}h · {{count}} 款",
+      "medianHours": "中位 {{hours}}h"
+    },
+    "footer": {
+      "nextLabel": "§03",
+      "nextHeading": "你会爱的游戏",
+      "nextHint": "基于这份品味画像生成的推荐。",
+      "regretLabel": "§04",
+      "regretHeading": "悄悄不再属于的",
+      "regretHint": "库里那些没玩起来的模式。"
+    }
+  },
+  "recs": {
+    "actKicker": "第二幕 · 推荐",
+    "tabs": {
+      "new": "发现新游戏",
+      "owned": "玩你已有的"
+    },
+    "captions": {
+      "new": "你还没拥有的游戏",
+      "owned": "你的 backlog，按契合度排序"
+    },
+    "intros": {
+      "new": "按品味相似度排序，排除已拥有。每条推荐附带证据——你库里贡献最大的游戏。",
+      "owned": "你买了但几乎没碰的游戏，按当前品味契合度排序。Steam 永远不会给你这个列表——你玩完已有的，不会给他们带来新收入。"
+    },
+    "ranking": "排序",
+    "modes": {
+      "best_fit": { "label": "最佳契合", "hint": "品味相似度最高" },
+      "fresh_fit": { "label": "新作偏好", "hint": "最佳契合，偏向更新的游戏" }
+    },
+    "reRanking": "· 重排中",
+    "becauseOf": "因为你玩过",
+    "closestFit": "最契合",
+    "viewOnSteam": "去 steam 查看 ↗",
+    "match": "契合",
+    "rankNo": "NO. {{n}}",
+    "empty": {
+      "newKicker": "暂无匹配",
+      "newTitle": "没有推荐通过过滤",
+      "newBody": "试试别的排序方式，或者等库更新后再来。",
+      "ownedKicker": "无 backlog",
+      "ownedTitle": "你的 backlog 是干净的",
+      "ownedBody": "没有契合的未玩游戏。要么你都打通了，要么你不再囤货了。"
+    }
+  },
+  "regret": {
+    "actKicker": "第三幕 · 审计",
+    "stats": {
+      "library": "库容",
+      "inCorpus": "语料内",
+      "untouched": "未触碰",
+      "untouchedGames": "款",
+      "patterns": "REGRET 模式"
+    },
+    "subtabs": {
+      "mixed": "mixed regret",
+      "pure": "pure regret",
+      "sleeping": "沉睡的游戏"
+    },
+    "intros": {
+      "mixed": "这些类型你已经找到了最爱，却还在买同类。同一种痒，但原作挠得最准——新买的那些就这么放着。",
+      "pure": "这些类型从来没真正进入过你。买了，试了，没继续。承认这点，未来的你会感谢现在的你。",
+      "sleeping": "你拥有但几乎没碰的游戏。下面每款都不到 30 分钟。"
+    },
+    "empty": {
+      "mixedKicker": "全部安全",
+      "mixedTitle": "未检测到重复购买",
+      "mixedBody": "当你迷上一个类型，你坚守原作。健康。",
+      "pureKicker": "全部安全",
+      "pureTitle": "无被遗弃的类型",
+      "pureBody": "你买的每个类型，你都真在玩。少见。",
+      "sleepingKicker": "整洁的书架",
+      "sleepingTitle": "没有沉睡的游戏",
+      "sleepingBody": "库里没有游戏少于 30 分钟——你买什么就玩什么。"
+    },
+    "patternLabel": "模式编号",
+    "playtimeMin": "分钟"
+  },
+  "loading": {
+    "kicker": "正在冲洗",
+    "heroLine1": "正在读取",
+    "heroLine2": "你的游戏库",
+    "body": "首次读取需 5-10 秒。之后同一账号的重复访问会走缓存，秒回。",
+    "progress": "进度",
+    "steps": {
+      "library": { "label": "拉取 steam 游戏库", "detail": "GetOwnedGames · steam web api" },
+      "taste": { "label": "计算品味向量", "detail": "时长加权 · TF-IDF 覆盖 5000 款" },
+      "recs": { "label": "生成推荐", "detail": "cosine 相似度 · 排除已有 · 质量过滤" },
+      "regret": { "label": "检测 library regret", "detail": "HDBSCAN 聚类 · pure / mixed 分类" }
+    }
+  }
+}

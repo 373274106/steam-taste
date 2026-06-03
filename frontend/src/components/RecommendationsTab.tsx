@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { RecCard, RecommendResponse } from "../lib/types";
 
 type DiscoverMode = "best_fit" | "fresh_fit";
@@ -13,25 +14,7 @@ interface Props {
 
 type Mode = "new" | "owned";
 
-const MODE_META: Record<Mode, { label: string; caption: string; intro: string }> = {
-  new: {
-    label: "discover new",
-    caption: "games you don't own yet",
-    intro:
-      "Ranked by taste similarity against your library. Excludes anything already in your collection. Each pick comes with its evidence — the games of yours that contributed most to the match.",
-  },
-  owned: {
-    label: "play what you own",
-    caption: "the backlog, sorted by fit",
-    intro:
-      "Games you already bought but barely started, ranked by how well they fit your current taste. Steam won't show you this list — finishing what you own doesn't drive their revenue.",
-  },
-};
-
-const DISCOVER_MODE_META: Record<DiscoverMode, { label: string; hint: string }> = {
-  best_fit: { label: "best fit", hint: "highest taste similarity" },
-  fresh_fit: { label: "fresh fit", hint: "best fit, biased toward newer titles" },
-};
+const DISCOVER_MODES: DiscoverMode[] = ["best_fit", "fresh_fit"];
 
 export default function RecommendationsTab({
   recsNew,
@@ -40,6 +23,7 @@ export default function RecommendationsTab({
   onDiscoverModeChange,
   recsRefreshing,
 }: Props) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>("new");
   const items = mode === "new" ? recsNew.items : recsOwned.items;
 
@@ -48,7 +32,7 @@ export default function RecommendationsTab({
       {/* Mode switcher — small act-style nav */}
       <div>
         <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-3">
-          act ii · recommendations
+          {t("recs.actKicker")}
         </p>
         <div className="flex items-stretch border-b border-[var(--color-border)] -mb-px">
           {(["new", "owned"] as Mode[]).map((m) => {
@@ -80,7 +64,7 @@ export default function RecommendationsTab({
                   }`}
                   style={{ fontWeight: 600 }}
                 >
-                  {MODE_META[m].label}
+                  {t(`recs.tabs.${m}`)}
                 </div>
               </button>
             );
@@ -90,10 +74,10 @@ export default function RecommendationsTab({
         {/* Editorial intro for selected mode */}
         <div className="mt-7 max-w-[60ch]">
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-2">
-            {MODE_META[mode].caption}
+            {t(`recs.captions.${mode}`)}
           </p>
           <p className="text-[var(--color-text-mid)] text-base sm:text-lg leading-relaxed">
-            {MODE_META[mode].intro}
+            {t(`recs.intros.${mode}`)}
           </p>
         </div>
 
@@ -101,29 +85,29 @@ export default function RecommendationsTab({
         {mode === "new" && (
           <div className="mt-6 flex items-center gap-2 flex-wrap">
             <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mr-1">
-              ranking
+              {t("recs.ranking")}
             </span>
-            {(Object.keys(DISCOVER_MODE_META) as DiscoverMode[]).map((dm) => {
+            {DISCOVER_MODES.map((dm) => {
               const active = discoverMode === dm;
               return (
                 <button
                   key={dm}
                   onClick={() => onDiscoverModeChange(dm)}
                   disabled={recsRefreshing}
-                  title={DISCOVER_MODE_META[dm].hint}
+                  title={t(`recs.modes.${dm}.hint`)}
                   className={`font-mono text-[11px] uppercase tracking-[0.18em] tabular px-3 py-1.5 border transition-colors ${
                     active
                       ? "border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-surface-1)]"
                       : "border-[var(--color-border)] text-[var(--color-text-mid)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-hi)]"
                   } disabled:opacity-50 disabled:cursor-wait`}
                 >
-                  {DISCOVER_MODE_META[dm].label}
+                  {t(`recs.modes.${dm}.label`)}
                 </button>
               );
             })}
             {recsRefreshing && (
               <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] ml-2 animate-pulse">
-                · re-ranking
+                {t("recs.reRanking")}
               </span>
             )}
           </div>
@@ -147,23 +131,21 @@ export default function RecommendationsTab({
 }
 
 function EmptyState({ mode }: { mode: Mode }) {
+  const { t } = useTranslation();
+  const k = mode === "owned" ? "owned" : "new";
   return (
     <div className="border border-[var(--color-border)] py-16 px-6 text-center">
       <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-3">
-        {mode === "owned" ? "clean backlog" : "no matches"}
+        {t(`recs.empty.${k}Kicker`)}
       </p>
       <p
         className="text-2xl text-[var(--color-text-hi)] mb-2 tracking-tight"
         style={{ fontWeight: 600 }}
       >
-        {mode === "owned"
-          ? "your backlog is clean"
-          : "no strong matches in the corpus"}
+        {t(`recs.empty.${k}Title`)}
       </p>
       <p className="text-sm text-[var(--color-text-lo)]">
-        {mode === "owned"
-          ? "Impressive purchasing discipline. Or you just play everything you buy."
-          : "Try a different account, or come back after we expand the corpus."}
+        {t(`recs.empty.${k}Body`)}
       </p>
     </div>
   );
@@ -178,6 +160,7 @@ function RecEntry({
   mode: Mode;
   rank: number;
 }) {
+  const { t } = useTranslation();
   return (
     <li className="bg-[var(--color-surface-1)] border border-[var(--color-border)] hover:border-[var(--color-border-strong)] transition-colors group">
       <div className="grid grid-cols-1 sm:grid-cols-[320px_1fr] gap-0">
@@ -208,7 +191,7 @@ function RecEntry({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-1">
-                no. {String(rank).padStart(2, "0")}
+                {t("recs.rankNo", { n: String(rank).padStart(2, "0") })}
                 {mode === "owned" &&
                   card.current_playtime_min !== undefined && (
                     <span className="ml-3 text-[var(--color-coral)]">
@@ -233,7 +216,7 @@ function RecEntry({
                 <span className="text-base text-[var(--color-text-dim)]">%</span>
               </div>
               <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-dim)] mt-1">
-                match
+                {t("recs.match")}
               </div>
             </div>
           </div>
@@ -256,7 +239,7 @@ function RecEntry({
           {card.evidence_games.length > 0 && (
             <div className="text-sm text-[var(--color-text-mid)] leading-relaxed">
               <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mr-2">
-                because of
+                {t("recs.becauseOf")}
               </span>
               {card.evidence_games.map((g, i) => (
                 <span key={g.appid}>
@@ -277,7 +260,7 @@ function RecEntry({
             <div className="text-sm text-[var(--color-text-mid)] leading-relaxed -mt-1 pl-4">
               <span className="text-[var(--color-text-dim)] mr-1">↳</span>
               <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-accent-soft)] mr-2">
-                closest fit
+                {t("recs.closestFit")}
               </span>
               <span className="text-[var(--color-text-hi)]">{card.closest_match.name}</span>
               <span className="font-mono text-xs text-[var(--color-text-dim)] tabular ml-1">
@@ -294,7 +277,7 @@ function RecEntry({
               rel="noopener noreferrer"
               className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-mid)] hover:text-[var(--color-accent)] transition-colors"
             >
-              view on steam ↗
+              {t("recs.viewOnSteam")}
             </a>
           </div>
         </div>

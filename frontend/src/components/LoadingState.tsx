@@ -1,17 +1,14 @@
+import { useTranslation } from "react-i18next";
 import Masthead from "./Masthead";
 
 type Step = "library" | "taste" | "recs" | "regret" | "done";
 
-const STEPS: { key: Step; label: string; detail: string }[] = [
-  { key: "library", label: "fetching steam library", detail: "GetOwnedGames · steam web api" },
-  { key: "taste", label: "computing taste vector", detail: "playtime-weighted · TF-IDF over 5,000 games" },
-  { key: "recs", label: "generating recommendations", detail: "cosine sim · exclude owned · quality filter" },
-  { key: "regret", label: "detecting library regret", detail: "HDBSCAN clusters · pure / mixed classification" },
-];
+const STEP_KEYS: Step[] = ["library", "taste", "recs", "regret"];
 
 export default function LoadingState({ step }: { step: Step }) {
-  const currentIdx = STEPS.findIndex((s) => s.key === step);
-  const pct = ((currentIdx + 1) / STEPS.length) * 100;
+  const { t } = useTranslation();
+  const currentIdx = STEP_KEYS.findIndex((k) => k === step);
+  const pct = ((currentIdx + 1) / STEP_KEYS.length) * 100;
 
   return (
     <main className="min-h-full flex flex-col">
@@ -23,7 +20,7 @@ export default function LoadingState({ step }: { step: Step }) {
           <div className="anim-fade-up delay-1 mb-10">
             <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-accent)] mb-4 flex items-center gap-3">
               <span aria-hidden>▰▰</span>
-              <span>developing</span>
+              <span>{t("loading.kicker")}</span>
               <span className="anim-blink" aria-hidden>▮</span>
             </p>
             <h1
@@ -35,22 +32,21 @@ export default function LoadingState({ step }: { step: Step }) {
                 fontWeight: 600,
               }}
             >
-              READING<br />YOUR LIBRARY
+              {t("loading.heroLine1")}<br />{t("loading.heroLine2")}
             </h1>
             <p className="text-[var(--color-text-mid)] text-base sm:text-lg leading-relaxed max-w-[52ch]">
-              First read takes 5-10 seconds. After that, repeat visits to the same
-              account are cached and return immediately.
+              {t("loading.body")}
             </p>
           </div>
 
           {/* Step list */}
           <ol className="space-y-1 mb-8">
-            {STEPS.map((s, i) => {
+            {STEP_KEYS.map((sKey, i) => {
               const status: "done" | "active" | "pending" =
                 i < currentIdx ? "done" : i === currentIdx ? "active" : "pending";
               return (
                 <li
-                  key={s.key}
+                  key={sKey}
                   className={`grid items-baseline gap-4 py-3 border-b transition-colors ${
                     status === "active"
                       ? "border-[var(--color-accent-soft)]"
@@ -79,10 +75,10 @@ export default function LoadingState({ step }: { step: Step }) {
                           : "text-[var(--color-text-dim)]"
                       }`}
                     >
-                      {s.label}
+                      {t(`loading.steps.${sKey}.label`)}
                     </div>
                     <div className="text-xs text-[var(--color-text-lo)] font-mono mt-0.5">
-                      {s.detail}
+                      {t(`loading.steps.${sKey}.detail`)}
                     </div>
                   </div>
                   <div className="shrink-0 font-mono text-sm">
@@ -106,7 +102,7 @@ export default function LoadingState({ step }: { step: Step }) {
           {/* Pixel progress bar */}
           <div className="font-mono text-sm tabular flex items-center gap-3">
             <span className="text-[var(--color-text-dim)] text-[10px] uppercase tracking-[0.2em]">
-              progress
+              {t("loading.progress")}
             </span>
             <div
               aria-hidden

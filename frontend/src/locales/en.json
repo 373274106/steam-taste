@@ -1,0 +1,167 @@
+{
+  "masthead": {
+    "brandSuffix": "steam edition",
+    "back": "new entry",
+    "lang": { "en": "EN", "zh": "中" }
+  },
+  "home": {
+    "hero": {
+      "kicker": "a player profile, in three acts",
+      "catalog": "cat. № pp-01",
+      "intro": "Read your Steam library the way a friend who actually plays would. Three quiet chapters — what you love, what's been waiting, and the types you've quietly outgrown."
+    },
+    "chooseEntry": "choose entry",
+    "entry1": {
+      "title": "sign in with steam",
+      "subtitle": "via OpenID — your browser's current Steam session decides who."
+    },
+    "entry2": {
+      "title": "enter a steam id",
+      "subtitle": "profile URL, SteamID64, or vanity name — must be public.",
+      "placeholder": "steamcommunity.com/id/...",
+      "submit": "go ▸",
+      "submitting": "..."
+    },
+    "entry3": {
+      "title": "try a sample player",
+      "subtitle": "26 games · roguelite-leaning · a few buyer's-remorse picks · no Steam account needed."
+    },
+    "errors": {
+      "authFailed": "Steam login didn't come back. Try paste mode or the sample below.",
+      "resolveFailed": "Couldn't resolve that profile."
+    },
+    "footer": {
+      "privacyLabel": "privacy",
+      "privacyBody": "Profile and game details must be public. Libraries are fetched live per request, never stored.",
+      "howLabel": "how it works",
+      "howBody": "TF-IDF tag similarity layered with a self-trained 50-d PPMI embedding and HDBSCAN clustering. All numpy, no LLM.",
+      "colophonLabel": "colophon",
+      "colophonPrefix": "Set in Pixelify Sans and Hanken Grotesk.",
+      "githubLink": "Source on GitHub ↗"
+    }
+  },
+  "result": {
+    "playerProfile": "player profile",
+    "demoTag": "· demo",
+    "games": "games",
+    "hours": "hours",
+    "sidLabel": "SID",
+    "acts": {
+      "i": { "kicker": "act i", "label": "your taste" },
+      "ii": { "kicker": "act ii", "label": "what you'd love next" },
+      "iii": { "kicker": "act iii", "label": "quietly outgrown" }
+    }
+  },
+  "taste": {
+    "kicker": "act i · your taste in one sentence",
+    "fallbackSentence": "Your taste profile is taking shape.",
+    "stats": {
+      "confidence": "CONFIDENCE",
+      "corpusMatch": "CORPUS MATCH",
+      "coverage": "COVERAGE"
+    },
+    "tagAffinity": {
+      "kicker": "§01",
+      "heading": "tag affinity",
+      "metric": "playtime-weighted · idf-scaled",
+      "radarLabel": "top 8 axes",
+      "rankedLabel": "top 12 ranked"
+    },
+    "clusters": {
+      "kicker": "§02",
+      "heading": "your library, clustered",
+      "profileNo": "profile #",
+      "regretFlag": "regret pattern",
+      "totalHours": "{{hours}}h total · {{count}} games",
+      "medianHours": "median {{hours}}h"
+    },
+    "footer": {
+      "nextLabel": "§03",
+      "nextHeading": "what you'd love next",
+      "nextHint": "Recommendations grounded in this taste profile.",
+      "regretLabel": "§04",
+      "regretHeading": "quietly outgrown",
+      "regretHint": "Library patterns that didn't stick."
+    }
+  },
+  "recs": {
+    "actKicker": "act ii · recommendations",
+    "tabs": {
+      "new": "discover new",
+      "owned": "play what you own"
+    },
+    "captions": {
+      "new": "games you don't own yet",
+      "owned": "the backlog, sorted by fit"
+    },
+    "intros": {
+      "new": "Ranked by taste similarity against your library. Excludes anything already in your collection. Each pick comes with its evidence — the games of yours that contributed most to the match.",
+      "owned": "Games you already bought but barely started, ranked by how well they fit your current taste. Steam won't show you this list — finishing what you own doesn't drive their revenue."
+    },
+    "ranking": "ranking",
+    "modes": {
+      "best_fit": { "label": "best fit", "hint": "highest taste similarity" },
+      "fresh_fit": { "label": "fresh fit", "hint": "best fit, biased toward newer titles" }
+    },
+    "reRanking": "· re-ranking",
+    "becauseOf": "because of",
+    "closestFit": "closest fit",
+    "viewOnSteam": "view on steam ↗",
+    "match": "MATCH",
+    "rankNo": "NO. {{n}}",
+    "empty": {
+      "newKicker": "no matches",
+      "newTitle": "no recommendations matched your filters",
+      "newBody": "Try a different ranking, or check back after your library updates.",
+      "ownedKicker": "clean backlog",
+      "ownedTitle": "your backlog is clean",
+      "ownedBody": "No untouched games matched the fit filter. Either you finish what you buy, or you've stopped buying."
+    }
+  },
+  "regret": {
+    "actKicker": "act iii · the audit",
+    "stats": {
+      "library": "LIBRARY",
+      "inCorpus": "IN CORPUS",
+      "untouched": "UNTOUCHED",
+      "untouchedGames": "games",
+      "patterns": "REGRET PATTERNS"
+    },
+    "subtabs": {
+      "mixed": "mixed regret",
+      "pure": "pure regret",
+      "sleeping": "sleeping games"
+    },
+    "intros": {
+      "mixed": "You already found your favorites in these genres, then kept buying more. Same itch, but the original still scratches it best — the new ones sit unstarted.",
+      "pure": "Genres where nothing stuck. You buy them, you try them, you don't finish them. Future-you will thank present-you for noticing the pattern.",
+      "sleeping": "Owned but barely touched. Each listed below has fewer than 30 minutes of playtime."
+    },
+    "empty": {
+      "mixedKicker": "all clear",
+      "mixedTitle": "no duplicates detected",
+      "mixedBody": "When you fall for a genre, you stick with the originals. Healthy.",
+      "pureKicker": "all clear",
+      "pureTitle": "no abandoned genres",
+      "pureBody": "Every type you buy, you actually play. That's rare.",
+      "sleepingKicker": "clean shelf",
+      "sleepingTitle": "no sleeping games",
+      "sleepingBody": "Nothing in your library has less than 30 minutes — you start what you buy."
+    },
+    "patternLabel": "pattern no.",
+    "playtimeMin": "min"
+  },
+  "loading": {
+    "kicker": "developing",
+    "heroLine1": "READING",
+    "heroLine2": "YOUR LIBRARY",
+    "body": "First read takes 5-10 seconds. After that, repeat visits to the same account are cached and return immediately.",
+    "progress": "progress",
+    "steps": {
+      "library": { "label": "fetching steam library", "detail": "GetOwnedGames · steam web api" },
+      "taste": { "label": "computing taste vector", "detail": "playtime-weighted · TF-IDF over 5,000 games" },
+      "recs": { "label": "generating recommendations", "detail": "cosine sim · exclude owned · quality filter" },
+      "regret": { "label": "detecting library regret", "detail": "HDBSCAN clusters · pure / mixed classification" }
+    }
+  }
+}

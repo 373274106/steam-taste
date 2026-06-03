@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import type {
   ProfileSummary,
@@ -18,13 +19,15 @@ type Tab = "taste" | "recs" | "regret";
 type LoadStep = "library" | "taste" | "recs" | "regret" | "done";
 type DiscoverMode = "best_fit" | "fresh_fit";
 
-const ACTS: { key: Tab; roman: string; caption: string }[] = [
-  { key: "taste", roman: "i", caption: "your taste" },
-  { key: "recs", roman: "ii", caption: "what you'd love next" },
-  { key: "regret", roman: "iii", caption: "quietly outgrown" },
+const ACTS: { key: Tab; roman: "i" | "ii" | "iii" }[] = [
+  { key: "taste", roman: "i" },
+  { key: "recs", roman: "ii" },
+  { key: "regret", roman: "iii" },
 ];
 
 export default function Result() {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.resolvedLanguage || "en";
   const [params] = useSearchParams();
   const steamidParam = params.get("steamid");
   const isDemo = params.get("demo") === "1" || steamidParam === "-1";
@@ -74,7 +77,7 @@ export default function Result() {
         setRecsOwned(ro);
         setStep("regret");
 
-        const rg = await api.regret(steamid);
+        const rg = await api.regret(steamid, lang);
         if (cancelled) return;
         setRegret(rg);
         setStep("done");
@@ -117,6 +120,26 @@ export default function Result() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [discoverMode]);
 
+  // Refetch the regret report when the user switches UI language — the
+  // diagnosis text is rendered server-side, so a frontend swap alone would
+  // leave the regret prose in the old language.
+  useEffect(() => {
+    if (regret === null) return;
+    let cancelled = false;
+    api
+      .regret(steamid, lang)
+      .then((r) => {
+        if (!cancelled) setRegret(r);
+      })
+      .catch(() => {
+        // Silent: keep existing regret visible if the refetch fails.
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
+
   if (loading) return <LoadingState step={step} />;
   if (error) return <ErrorState message={error} />;
   if (!summary || !taste) return null;
@@ -138,8 +161,8 @@ export default function Result() {
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--color-accent)] mb-5 flex items-center gap-3">
               <span aria-hidden>▰▰</span>
               <span>
-                player profile{isDemo && (
-                  <span className="text-[var(--color-coral)]"> · demo</span>
+                {t("result.playerProfile")}{isDemo && (
+                  <span className="text-[var(--color-coral)]"> {t("result.demoTag")}</span>
                 )}
               </span>
               <span aria-hidden>▰▰</span>
@@ -170,14 +193,14 @@ export default function Result() {
                     <span className="text-[var(--color-text-hi)]">
                       {summary.library_size.toLocaleString()}
                     </span>
-                    <span className="text-[var(--color-text-dim)]"> games</span>
+                    <span className="text-[var(--color-text-dim)]"> {t("result.games")}</span>
                   </span>
                   <span className="font-mono text-base sm:text-lg text-[var(--color-text-mid)] tabular">
                     <span className="text-[var(--color-text-hi)]">{hoursStr}</span>
-                    <span className="text-[var(--color-text-dim)]"> hours</span>
+                    <span className="text-[var(--color-text-dim)]"> {t("result.hours")}</span>
                   </span>
                   <span className="font-mono text-xs text-[var(--color-text-dim)] uppercase tracking-[0.18em] ml-auto hidden sm:inline">
-                    sid · ····{summary.steam_id.slice(-6)}
+                    {t("result.sidLabel")} · ····{summary.steam_id.slice(-6)}
                   </span>
                 </div>
               </div>
@@ -209,7 +232,7 @@ export default function Result() {
                         : "text-[var(--color-text-dim)]"
                     }`}
                   >
-                    act {a.roman}
+                    {t(`result.acts.${a.roman}.kicker`)}
                   </div>
                   <div
                     className={`text-base sm:text-lg tracking-tight ${
@@ -219,7 +242,7 @@ export default function Result() {
                     }`}
                     style={{ fontWeight: 600 }}
                   >
-                    {a.caption}
+                    {t(`result.acts.${a.roman}.label`)}
                   </div>
                 </button>
               );

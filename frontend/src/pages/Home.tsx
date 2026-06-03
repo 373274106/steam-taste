@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import Masthead from "../components/Masthead";
 
@@ -7,13 +8,12 @@ export default function Home() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const errorParam = params.get("error");
+  const { t } = useTranslation();
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(
-    errorParam === "auth_failed"
-      ? "Steam login didn't come back. Try paste mode or the sample below."
-      : null,
+    errorParam === "auth_failed" ? t("home.errors.authFailed") : null,
   );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -25,7 +25,7 @@ export default function Home() {
       const r = await api.resolveProfile(input.trim());
       navigate(`/result?steamid=${r.steam_id}`);
     } catch (err: any) {
-      setError(err.message || "Couldn't resolve that profile.");
+      setError(err.message || t("home.errors.resolveFailed"));
     } finally {
       setLoading(false);
     }
@@ -43,11 +43,11 @@ export default function Home() {
             <div className="flex items-baseline justify-between gap-4 mb-6">
               <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--color-accent)] flex items-center gap-3">
                 <span aria-hidden>▰▰</span>
-                <span>a player profile, in three acts</span>
+                <span>{t("home.hero.kicker")}</span>
                 <span aria-hidden>▰▰</span>
               </p>
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-dim)] tabular hidden sm:block">
-                cat. №&nbsp;pp-01
+                {t("home.hero.catalog")}
               </p>
             </div>
             <h1
@@ -73,9 +73,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="text-[var(--color-text-mid)] text-lg sm:text-xl leading-relaxed max-w-[58ch]">
-              Read your Steam library the way a friend who actually plays would.
-              Three quiet chapters — what you love, what's been waiting, and the
-              types you've quietly outgrown.
+              {t("home.hero.intro")}
             </p>
           </section>
 
@@ -84,7 +82,7 @@ export default function Home() {
             <div className="h-px flex-1 bg-[var(--color-border)]" />
             <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--color-text-mid)] flex items-center gap-3">
               <span aria-hidden className="text-[var(--color-accent)]">◇</span>
-              <span>choose entry</span>
+              <span>{t("home.chooseEntry")}</span>
               <span aria-hidden className="text-[var(--color-accent)]">◇</span>
             </span>
             <div className="h-px flex-1 bg-[var(--color-border)]" />
@@ -105,10 +103,10 @@ export default function Home() {
                   className="font-display text-[var(--color-text-hi)] mb-1.5"
                   style={{ fontSize: "1.625rem", lineHeight: 1.1, fontWeight: 500 }}
                 >
-                  sign in with steam
+                  {t("home.entry1.title")}
                 </div>
                 <div className="text-sm text-[var(--color-text-lo)]">
-                  via OpenID — your browser's current Steam session decides who.
+                  {t("home.entry1.subtitle")}
                 </div>
               </div>
               <span className="font-mono text-xl text-[var(--color-text-dim)] group-hover:text-[var(--color-accent)] group-hover:translate-x-1 transition-all shrink-0">
@@ -131,10 +129,10 @@ export default function Home() {
                     className="font-display text-[var(--color-text-hi)] block mb-1.5"
                     style={{ fontSize: "1.625rem", lineHeight: 1.1, fontWeight: 500 }}
                   >
-                    enter a steam id
+                    {t("home.entry2.title")}
                   </label>
                   <div className="text-sm text-[var(--color-text-lo)] mb-4">
-                    profile URL, SteamID64, or vanity name — must be public.
+                    {t("home.entry2.subtitle")}
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <input
@@ -142,7 +140,7 @@ export default function Home() {
                       type="text"
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      placeholder="steamcommunity.com/id/..."
+                      placeholder={t("home.entry2.placeholder")}
                       className="flex-1 bg-[var(--color-bg)] border border-[var(--color-border)] focus:border-[var(--color-accent)] px-4 py-3 text-sm text-[var(--color-text-hi)] placeholder:text-[var(--color-text-dim)] outline-none font-mono"
                       disabled={loading}
                       autoComplete="off"
@@ -154,7 +152,7 @@ export default function Home() {
                       className="px-6 py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-deep)] disabled:bg-[var(--color-surface-2)] disabled:text-[var(--color-text-dim)] disabled:cursor-not-allowed text-[var(--color-bg)] font-display tabular transition-colors shrink-0"
                       style={{ fontSize: "1.125rem", fontWeight: 600 }}
                     >
-                      {loading ? "..." : "go ▸"}
+                      {loading ? t("home.entry2.submitting") : t("home.entry2.submit")}
                     </button>
                   </div>
                 </div>
@@ -174,11 +172,10 @@ export default function Home() {
                   className="font-display text-[var(--color-text-hi)] mb-1.5"
                   style={{ fontSize: "1.625rem", lineHeight: 1.1, fontWeight: 500 }}
                 >
-                  try a sample player
+                  {t("home.entry3.title")}
                 </div>
                 <div className="text-sm text-[var(--color-text-lo)]">
-                  26 games · roguelite-leaning · a few buyer's-remorse picks · no
-                  Steam account needed.
+                  {t("home.entry3.subtitle")}
                 </div>
               </div>
               <span className="font-mono text-xl text-[var(--color-text-dim)] group-hover:text-[var(--color-accent)] group-hover:translate-x-1 transition-all shrink-0">
@@ -203,35 +200,33 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-7">
               <div>
                 <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-3">
-                  privacy
+                  {t("home.footer.privacyLabel")}
                 </div>
                 <div className="text-sm text-[var(--color-text-lo)] leading-relaxed">
-                  Profile and game details must be public. Libraries are fetched
-                  live per request, never stored.
+                  {t("home.footer.privacyBody")}
                 </div>
               </div>
               <div>
                 <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-3">
-                  how it works
+                  {t("home.footer.howLabel")}
                 </div>
                 <div className="text-sm text-[var(--color-text-lo)] leading-relaxed">
-                  TF-IDF tag similarity layered with a self-trained 50-d PPMI
-                  embedding and HDBSCAN clustering. All numpy, no LLM.
+                  {t("home.footer.howBody")}
                 </div>
               </div>
               <div>
                 <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-3">
-                  colophon
+                  {t("home.footer.colophonLabel")}
                 </div>
                 <div className="text-sm text-[var(--color-text-lo)] leading-relaxed">
-                  Set in Pixelify Sans and Hanken Grotesk.{" "}
+                  {t("home.footer.colophonPrefix")}{" "}
                   <a
                     href="https://github.com/373274106/steam-taste"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[var(--color-text-mid)] hover:text-[var(--color-accent)] underline underline-offset-2 decoration-[var(--color-border-strong)] hover:decoration-[var(--color-accent)] transition-colors"
                   >
-                    Source on GitHub ↗
+                    {t("home.footer.githubLink")}
                   </a>
                 </div>
               </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { TasteProfile } from "../lib/types";
 import TagRadar from "./TagRadar";
 
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export default function TasteProfileTab({ taste, onSelectTab }: Props) {
+  const { t } = useTranslation();
   const tags = taste.top_tags.slice(0, 12);
   const coverage = taste.library_stats.coverage;
 
@@ -19,7 +21,7 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
       {/* ====================  HERO  ==================== */}
       <section>
         <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-3">
-          act i · your taste in one sentence
+          {t("taste.kicker")}
         </p>
         <blockquote
           className="font-display text-[var(--color-text-hi)] leading-[1.1] max-w-[26ch]"
@@ -32,26 +34,26 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
           <span className="text-[var(--color-accent)] mr-2" aria-hidden>
             “
           </span>
-          {taste.one_sentence.toLowerCase()}
+          {(taste.one_sentence || t("taste.fallbackSentence")).toLowerCase()}
           <span className="text-[var(--color-accent)] ml-1" aria-hidden>
             ”
           </span>
         </blockquote>
         <div className="mt-5 flex flex-wrap items-baseline gap-x-6 gap-y-1 font-mono text-xs text-[var(--color-text-dim)] uppercase tracking-[0.18em] tabular">
           <span>
-            confidence{" "}
+            {t("taste.stats.confidence")}{" "}
             <span className="text-[var(--color-text-mid)]">
               {(taste.confidence * 100).toFixed(0)}%
             </span>
           </span>
           <span>
-            corpus match{" "}
+            {t("taste.stats.corpusMatch")}{" "}
             <span className="text-[var(--color-text-mid)]">
               {taste.library_stats.in_corpus} / {taste.library_stats.total_games}
             </span>
           </span>
           <span>
-            coverage{" "}
+            {t("taste.stats.coverage")}{" "}
             <span className="text-[var(--color-text-mid)]">
               {(coverage * 100).toFixed(0)}%
             </span>
@@ -63,17 +65,17 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
       <section>
         <div className="flex items-baseline gap-4 mb-7">
           <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-accent)]">
-            §01
+            {t("taste.tagAffinity.kicker")}
           </span>
           <h2
             className="text-xl sm:text-2xl text-[var(--color-text-hi)] tracking-tight"
             style={{ fontWeight: 600 }}
           >
-            tag affinity
+            {t("taste.tagAffinity.heading")}
           </h2>
           <div className="h-px flex-1 bg-[var(--color-border)] translate-y-[-0.35em]" />
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-dim)] tabular">
-            playtime-weighted · idf-scaled
+            {t("taste.tagAffinity.metric")}
           </span>
         </div>
 
@@ -81,7 +83,7 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
           {/* Radar — top 8 */}
           <div className="relative">
             <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-2">
-              top 8 axes
+              {t("taste.tagAffinity.radarLabel")}
             </p>
             <TagRadar data={tags} top={8} />
           </div>
@@ -89,12 +91,12 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
           {/* Compact ranking — top 12 */}
           <div>
             <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-3">
-              top 12 ranked
+              {t("taste.tagAffinity.rankedLabel")}
             </p>
             <ol className="grid grid-cols-1 gap-0">
-              {tags.map((t, i) => (
+              {tags.map((tag, i) => (
                 <li
-                  key={t.tag}
+                  key={tag.tag}
                   className="grid items-baseline gap-3 py-1.5 border-b border-[var(--color-border)]/40 last:border-0"
                   style={{ gridTemplateColumns: "auto 1fr auto" }}
                 >
@@ -106,10 +108,10 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
                       i < 3 ? "text-[var(--color-accent)]" : ""
                     }`}
                   >
-                    {t.tag}
+                    {tag.tag}
                   </span>
                   <span className="font-mono text-xs text-[var(--color-text-mid)] tabular w-10 text-right">
-                    {t.weight.toFixed(2)}
+                    {tag.weight.toFixed(2)}
                   </span>
                 </li>
               ))}
@@ -122,13 +124,13 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
       <section>
         <div className="flex items-baseline gap-4 mb-6">
           <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-accent)]">
-            §02
+            {t("taste.clusters.kicker")}
           </span>
           <h2
             className="text-xl sm:text-2xl text-[var(--color-text-hi)] tracking-tight"
             style={{ fontWeight: 600 }}
           >
-            your library, clustered
+            {t("taste.clusters.heading")}
           </h2>
           <div className="h-px flex-1 bg-[var(--color-border)] translate-y-[-0.35em]" />
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-dim)] tabular">
@@ -146,7 +148,7 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
               <header className="flex items-start justify-between gap-3 mb-3">
                 <div className="min-w-0">
                   <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-1">
-                    profile #{String(i + 1).padStart(2, "0")}
+                    {t("taste.clusters.profileNo")}{String(i + 1).padStart(2, "0")}
                   </div>
                   <h3
                     className="text-base sm:text-lg text-[var(--color-text-hi)] leading-tight tracking-tight"
@@ -160,7 +162,7 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
                     {c.total_hours.toFixed(0)}h
                   </div>
                   <div className="text-[var(--color-text-dim)]">
-                    {c.game_count} games
+                    {c.game_count} {t("result.games")}
                   </div>
                 </div>
               </header>
@@ -210,7 +212,7 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
                 ))}
                 {c.is_regret && (
                   <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-coral)]">
-                    ◆ {c.regret_kind === "mixed" ? "mixed regret" : "pure regret"}
+                    ◆ {t(`regret.subtabs.${c.regret_kind === "mixed" ? "mixed" : "pure"}`)}
                   </span>
                 )}
               </div>
@@ -228,7 +230,7 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
       {/* ====================  ACT NAVIGATION  ==================== */}
       <section className="pt-8 border-t border-[var(--color-border)]">
         <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-5">
-          continue
+          {t("taste.footer.nextLabel")}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
@@ -243,10 +245,10 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
                 className="text-base sm:text-lg text-[var(--color-text-hi)] leading-tight"
                 style={{ fontWeight: 600 }}
               >
-                what you'd love next
+                {t("taste.footer.nextHeading")}
               </div>
               <div className="text-xs text-[var(--color-text-lo)] mt-0.5">
-                personalized recommendations + games you already own
+                {t("taste.footer.nextHint")}
               </div>
             </div>
             <span className="font-mono text-lg text-[var(--color-text-dim)] group-hover:text-[var(--color-accent)] group-hover:translate-x-1 transition-all shrink-0">
@@ -265,10 +267,10 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
                 className="text-base sm:text-lg text-[var(--color-text-hi)] leading-tight"
                 style={{ fontWeight: 600 }}
               >
-                quietly outgrown
+                {t("taste.footer.regretHeading")}
               </div>
               <div className="text-xs text-[var(--color-text-lo)] mt-0.5">
-                types you bought but barely played
+                {t("taste.footer.regretHint")}
               </div>
             </div>
             <span className="font-mono text-lg text-[var(--color-text-dim)] group-hover:text-[var(--color-accent)] group-hover:translate-x-1 transition-all shrink-0">

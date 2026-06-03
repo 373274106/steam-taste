@@ -1,30 +1,17 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { RegretCluster, RegretReport } from "../lib/types";
 
 type Kind = "mixed" | "pure" | "sleeping";
 
-const KIND_META: Record<Kind, { label: string; section: string; intro: string }> = {
-  mixed: {
-    label: "mixed regret",
-    section: "§01",
-    intro:
-      "You already found your favorites in these genres, then kept buying more. Same itch, but the original still scratches it best — the new ones sit unstarted.",
-  },
-  pure: {
-    label: "pure regret",
-    section: "§02",
-    intro:
-      "Types you keep buying and never click with. Each time on sale you think \"this one will land\" — and then it doesn't. These genres aren't for you. That's fine.",
-  },
-  sleeping: {
-    label: "sleeping games",
-    section: "§03",
-    intro:
-      "Bought, never properly started — under 30 minutes total. Shown ascending by playtime. The most quietly abandoned first.",
-  },
+const KIND_SECTIONS: Record<Kind, string> = {
+  mixed: "§01",
+  pure: "§02",
+  sleeping: "§03",
 };
 
 export default function RegretTab({ regret }: { regret: RegretReport }) {
+  const { t } = useTranslation();
   const [kind, setKind] = useState<Kind>("mixed");
   const kindCount =
     kind === "mixed"
@@ -38,19 +25,19 @@ export default function RegretTab({ regret }: { regret: RegretReport }) {
       {/* Stats — cartridge label badges, big pixel numbers */}
       <section>
         <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-4">
-          act iii · the audit
+          {t("regret.actKicker")}
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatBadge label="library" value={regret.stats.total_games} />
-          <StatBadge label="in corpus" value={regret.stats.in_corpus} />
+          <StatBadge label={t("regret.stats.library")} value={regret.stats.total_games} />
+          <StatBadge label={t("regret.stats.inCorpus")} value={regret.stats.in_corpus} />
           <StatBadge
-            label="untouched"
+            label={t("regret.stats.untouched")}
             value={regret.stats.sleeping_count}
-            suffix="games"
+            suffix={t("regret.stats.untouchedGames")}
             accent="coral"
           />
           <StatBadge
-            label="regret patterns"
+            label={t("regret.stats.patterns")}
             value={regret.stats.regret_cluster_count}
             accent="amber"
           />
@@ -85,7 +72,7 @@ export default function RegretTab({ regret }: { regret: RegretReport }) {
                       : "text-[var(--color-text-dim)]"
                   }`}
                 >
-                  <span>{KIND_META[k].section}</span>
+                  <span>{KIND_SECTIONS[k]}</span>
                   <span className="tabular text-[var(--color-text-dim)]">
                     ({count})
                   </span>
@@ -98,7 +85,7 @@ export default function RegretTab({ regret }: { regret: RegretReport }) {
                   }`}
                   style={{ fontWeight: 600 }}
                 >
-                  {KIND_META[k].label}
+                  {t(`regret.subtabs.${k}`)}
                 </div>
               </button>
             );
@@ -108,7 +95,7 @@ export default function RegretTab({ regret }: { regret: RegretReport }) {
         {/* Intro paragraph */}
         <div className="mt-7 max-w-[60ch]">
           <p className="text-[var(--color-text-mid)] text-base sm:text-lg leading-relaxed">
-            {KIND_META[kind].intro}
+            {t(`regret.intros.${kind}`)}
           </p>
         </div>
       </section>
@@ -171,21 +158,20 @@ function StatBadge({
 }
 
 function EmptyState({ kind }: { kind: "mixed" | "pure" }) {
+  const { t } = useTranslation();
   return (
     <div className="border border-[var(--color-border)] py-16 px-6 text-center">
       <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-3">
-        all clear
+        {t(`regret.empty.${kind}Kicker`)}
       </p>
       <p
         className="text-2xl text-[var(--color-text-hi)] mb-2 tracking-tight"
         style={{ fontWeight: 600 }}
       >
-        {kind === "mixed" ? "no duplicates detected" : "no abandoned genres"}
+        {t(`regret.empty.${kind}Title`)}
       </p>
       <p className="text-sm text-[var(--color-text-lo)] max-w-md mx-auto">
-        {kind === "mixed"
-          ? "When you fall for a genre, you stick with the originals. Healthy."
-          : "Whatever you buy, you actually try. That's rarer than you think."}
+        {t(`regret.empty.${kind}Body`)}
       </p>
     </div>
   );
@@ -198,6 +184,7 @@ function ClusterList({
   clusters: RegretCluster[];
   kind: "mixed" | "pure";
 }) {
+  const { t } = useTranslation();
   if (clusters.length === 0) return null;
   const accent =
     kind === "mixed"
@@ -215,7 +202,7 @@ function ClusterList({
           <header className="flex items-start justify-between gap-4 mb-4">
             <div className="min-w-0">
               <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-1">
-                pattern no. {String(i + 1).padStart(2, "0")}
+                {t("regret.patternLabel")} {String(i + 1).padStart(2, "0")}
               </div>
               <h3
                 className="text-lg sm:text-xl text-[var(--color-text-hi)] leading-tight tracking-tight"
@@ -226,10 +213,10 @@ function ClusterList({
             </div>
             <div className="text-right shrink-0 font-mono text-xs tabular">
               <div className="text-[var(--color-text-hi)]">
-                {c.game_count} games
+                {c.game_count} {t("result.games")}
               </div>
               <div className="text-[var(--color-text-dim)]">
-                median {c.median_hours}h
+                {t("taste.clusters.medianHours", { hours: c.median_hours })}
               </div>
             </div>
           </header>
@@ -279,17 +266,18 @@ function SleepingGrid({
 }: {
   games: { appid: number; name: string; playtime_min: number }[];
 }) {
+  const { t } = useTranslation();
   if (games.length === 0) {
     return (
       <div className="border border-[var(--color-border)] py-16 px-6 text-center">
         <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-3">
-          clean shelf
+          {t("regret.empty.sleepingKicker")}
         </p>
         <p
           className="text-2xl text-[var(--color-text-hi)] tracking-tight"
           style={{ fontWeight: 600 }}
         >
-          no sleeping games
+          {t("regret.empty.sleepingTitle")}
         </p>
       </div>
     );
@@ -315,7 +303,7 @@ function SleepingGrid({
             {g.name}
           </div>
           <div className="font-mono text-[10px] text-[var(--color-coral)] tabular uppercase tracking-wider mt-0.5">
-            {g.playtime_min}m played
+            {g.playtime_min}{t("regret.playtimeMin")}
           </div>
         </a>
       ))}

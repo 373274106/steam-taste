@@ -48,6 +48,6 @@ export const api = {
   recommendOwned: (steamid: number | string, k = 15) =>
     get<RecommendResponse>(`/api/taste/${steamid}/recommend/owned?k=${k}`),
 
-  regret: (steamid: number | string) =>
-    get<RegretReport>(`/api/taste/${steamid}/regret`),
+  regret: (steamid: number | string, lang: string = "zh") =>
+    get<RegretReport>(`/api/taste/${steamid}/regret?lang=${encodeURIComponent(lang)}`),
 };
