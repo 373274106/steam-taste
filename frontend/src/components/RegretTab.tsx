@@ -3,177 +3,321 @@ import type { RegretCluster, RegretReport } from "../lib/types";
 
 type Kind = "mixed" | "pure" | "sleeping";
 
+const KIND_META: Record<Kind, { label: string; section: string; intro: string }> = {
+  mixed: {
+    label: "mixed regret",
+    section: "§01",
+    intro:
+      "You already found your favorites in these genres, then kept buying more. Same itch, but the original still scratches it best — the new ones sit unstarted.",
+  },
+  pure: {
+    label: "pure regret",
+    section: "§02",
+    intro:
+      "Types you keep buying and never click with. Each time on sale you think \"this one will land\" — and then it doesn't. These genres aren't for you. That's fine.",
+  },
+  sleeping: {
+    label: "sleeping games",
+    section: "§03",
+    intro:
+      "Bought, never properly started — under 30 minutes total. Shown ascending by playtime. The most quietly abandoned first.",
+  },
+};
+
 export default function RegretTab({ regret }: { regret: RegretReport }) {
   const [kind, setKind] = useState<Kind>("mixed");
+  const kindCount =
+    kind === "mixed"
+      ? regret.stats.mixed_count
+      : kind === "pure"
+      ? regret.stats.pure_count
+      : regret.stats.sleeping_count;
 
   return (
-    <div>
-      {/* Stats banner */}
-      <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Library" value={regret.stats.total_games.toLocaleString()} />
-        <Stat label="In corpus" value={regret.stats.in_corpus.toLocaleString()} />
-        <Stat label="Untouched" value={regret.stats.sleeping_count.toLocaleString()} suffix=" games" accent="red" />
-        <Stat label="Regret patterns" value={regret.stats.regret_cluster_count.toLocaleString()} accent="amber" />
-      </div>
+    <div className="space-y-10 sm:space-y-14">
+      {/* Stats — cartridge label badges, big pixel numbers */}
+      <section>
+        <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-4">
+          act iii · the audit
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatBadge label="library" value={regret.stats.total_games} />
+          <StatBadge label="in corpus" value={regret.stats.in_corpus} />
+          <StatBadge
+            label="untouched"
+            value={regret.stats.sleeping_count}
+            suffix="games"
+            accent="coral"
+          />
+          <StatBadge
+            label="regret patterns"
+            value={regret.stats.regret_cluster_count}
+            accent="amber"
+          />
+        </div>
+      </section>
 
-      <div className="flex gap-2 mb-6 border-b border-slate-800">
-        <KindButton active={kind === "mixed"} onClick={() => setKind("mixed")}>
-          🩸 Mixed Regret ({regret.stats.mixed_count})
-        </KindButton>
-        <KindButton active={kind === "pure"} onClick={() => setKind("pure")}>
-          💀 Pure Regret ({regret.stats.pure_count})
-        </KindButton>
-        <KindButton active={kind === "sleeping"} onClick={() => setKind("sleeping")}>
-          💤 Sleeping Games ({regret.stats.sleeping_count})
-        </KindButton>
-      </div>
-
-      {kind === "mixed" && (
-        <>
-          <Intro>
-            你<strong>找到了真爱</strong>，但还是忍不住买同类。下面这些类型里你已经有了代表作，
-            <strong>再买同类的基本不会玩</strong>。
-          </Intro>
-          <ClusterList clusters={regret.mixed.slice(0, 10)} kind="mixed" />
-        </>
-      )}
-
-      {kind === "pure" && (
-        <>
-          <Intro>
-            你<strong>反复尝试</strong>但从来没真正入坑的类型。每次打折都觉得"这次会爱的"，
-            然后还是没玩。<strong>这些类型不适合你</strong>。
-          </Intro>
-          <ClusterList clusters={regret.pure.slice(0, 10)} kind="pure" />
-        </>
-      )}
-
-      {kind === "sleeping" && (
-        <>
-          <Intro>
-            买了但<strong>不到 30 分钟</strong>的游戏。展示前 30 款，按 playtime 升序。
-          </Intro>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {regret.sleeping_preview.map((g) => (
-              <a
-                key={g.appid}
-                href={`https://store.steampowered.com/app/${g.appid}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-[var(--color-steam-panel)] border border-slate-800 hover:border-slate-700 rounded p-3 transition"
+      {/* Kind switcher */}
+      <section>
+        <div className="flex items-stretch border-b border-[var(--color-border)] -mb-px overflow-x-auto">
+          {(["mixed", "pure", "sleeping"] as Kind[]).map((k) => {
+            const active = kind === k;
+            const count =
+              k === "mixed"
+                ? regret.stats.mixed_count
+                : k === "pure"
+                ? regret.stats.pure_count
+                : regret.stats.sleeping_count;
+            return (
+              <button
+                key={k}
+                onClick={() => setKind(k)}
+                className={`flex-1 min-w-[140px] py-3 sm:py-4 px-3 sm:px-5 text-left border-b-2 transition-colors ${
+                  active
+                    ? "border-[var(--color-accent)]"
+                    : "border-transparent hover:bg-[var(--color-surface-1)]"
+                }`}
               >
-                <img
-                  src={`https://cdn.akamai.steamstatic.com/steam/apps/${g.appid}/header.jpg`}
-                  alt=""
-                  className="w-full aspect-[460/215] object-cover rounded mb-2 bg-slate-900"
-                  onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
-                />
-                <div className="text-sm font-medium truncate">{g.name}</div>
-                <div className="text-xs text-slate-500">{g.playtime_min} min</div>
-              </a>
-            ))}
-          </div>
-        </>
-      )}
+                <div
+                  className={`font-mono text-[10px] uppercase tracking-[0.2em] mb-0.5 flex items-baseline gap-2 ${
+                    active
+                      ? "text-[var(--color-accent)]"
+                      : "text-[var(--color-text-dim)]"
+                  }`}
+                >
+                  <span>{KIND_META[k].section}</span>
+                  <span className="tabular text-[var(--color-text-dim)]">
+                    ({count})
+                  </span>
+                </div>
+                <div
+                  className={`font-display text-base sm:text-lg leading-tight ${
+                    active
+                      ? "text-[var(--color-text-hi)]"
+                      : "text-[var(--color-text-mid)]"
+                  }`}
+                  style={{ fontWeight: 500 }}
+                >
+                  {KIND_META[k].label}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Intro paragraph */}
+        <div className="mt-7 max-w-[60ch]">
+          <p className="text-[var(--color-text-mid)] text-base sm:text-lg leading-relaxed">
+            {KIND_META[kind].intro}
+          </p>
+        </div>
+      </section>
+
+      {/* Content */}
+      <section>
+        {kind === "mixed" && (
+          <ClusterList clusters={regret.mixed.slice(0, 10)} kind="mixed" />
+        )}
+        {kind === "pure" && (
+          <ClusterList clusters={regret.pure.slice(0, 10)} kind="pure" />
+        )}
+        {kind === "sleeping" && <SleepingGrid games={regret.sleeping_preview} />}
+
+        {kind !== "sleeping" && kindCount === 0 && (
+          <EmptyState kind={kind} />
+        )}
+      </section>
     </div>
   );
 }
 
-function Stat({
+function StatBadge({
   label,
   value,
   suffix,
   accent,
 }: {
   label: string;
-  value: string;
+  value: number;
   suffix?: string;
-  accent?: "red" | "amber";
+  accent?: "coral" | "amber";
 }) {
   const color =
-    accent === "red" ? "text-red-300" : accent === "amber" ? "text-amber-300" : "text-slate-100";
+    accent === "coral"
+      ? "text-[var(--color-coral)]"
+      : accent === "amber"
+      ? "text-[var(--color-accent)]"
+      : "text-[var(--color-text-hi)]";
   return (
-    <div className="bg-[var(--color-steam-panel)] border border-slate-800 rounded p-3">
-      <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">{label}</div>
-      <div className={`text-2xl font-bold ${color}`}>
-        {value}
-        {suffix && <span className="text-sm font-normal text-slate-500">{suffix}</span>}
+    <div className="bg-[var(--color-surface-1)] border border-[var(--color-border)] p-4">
+      <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-1.5">
+        {label}
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <div
+          className={`font-display tabular leading-none ${color}`}
+          style={{ fontSize: "clamp(1.75rem, 5vw, 2.5rem)", fontWeight: 600 }}
+        >
+          {value.toLocaleString()}
+        </div>
+        {suffix && (
+          <div className="font-mono text-xs text-[var(--color-text-dim)] tracking-wider">
+            {suffix}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function KindButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function EmptyState({ kind }: { kind: "mixed" | "pure" }) {
   return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 -mb-px border-b-2 transition text-sm ${
-        active
-          ? "border-[var(--color-steam-blue)] text-white"
-          : "border-transparent text-slate-400 hover:text-slate-200"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function Intro({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-6 p-4 bg-slate-900/40 border border-slate-800 rounded-lg text-sm text-slate-300">
-      {children}
+    <div className="border border-[var(--color-border)] py-16 px-6 text-center">
+      <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-3">
+        all clear
+      </p>
+      <p
+        className="font-display text-2xl text-[var(--color-text-hi)] mb-2"
+        style={{ fontWeight: 500 }}
+      >
+        {kind === "mixed" ? "no duplicates detected" : "no abandoned genres"}
+      </p>
+      <p className="text-sm text-[var(--color-text-lo)] max-w-md mx-auto">
+        {kind === "mixed"
+          ? "When you fall for a genre, you stick with the originals. Healthy."
+          : "Whatever you buy, you actually try. That's rarer than you think."}
+      </p>
     </div>
   );
 }
 
-function ClusterList({ clusters, kind }: { clusters: RegretCluster[]; kind: "mixed" | "pure" }) {
-  if (clusters.length === 0) {
-    return <div className="text-slate-500 text-center py-12">没有此类簇</div>;
-  }
-  const accent = kind === "mixed" ? "border-amber-900/50 bg-amber-950/10" : "border-red-900/50 bg-red-950/10";
+function ClusterList({
+  clusters,
+  kind,
+}: {
+  clusters: RegretCluster[];
+  kind: "mixed" | "pure";
+}) {
+  if (clusters.length === 0) return null;
+  const accent =
+    kind === "mixed"
+      ? "border-[var(--color-accent-soft)]"
+      : "border-[var(--color-coral-deep)]/40";
 
   return (
-    <div className="space-y-4">
+    <ol className="space-y-5">
       {clusters.map((c, i) => (
-        <div key={c.label} className={`border rounded-lg p-5 ${accent}`}>
-          <div className="flex items-start justify-between gap-4 mb-3">
-            <div>
-              <div className="text-xs text-slate-500 mb-1">#{i + 1}</div>
-              <h3 className="text-lg font-semibold">
+        <li
+          key={c.label}
+          className={`bg-[var(--color-surface-1)] border ${accent} p-5 sm:p-6`}
+        >
+          {/* Header */}
+          <header className="flex items-start justify-between gap-4 mb-4">
+            <div className="min-w-0">
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-1">
+                pattern no. {String(i + 1).padStart(2, "0")}
+              </div>
+              <h3
+                className="font-display text-xl sm:text-2xl text-[var(--color-text-hi)] leading-tight"
+                style={{ fontWeight: 500 }}
+              >
                 {c.dominant_tags.slice(0, 3).join(" / ") || `Cluster ${c.label}`}
               </h3>
             </div>
-            <div className="text-right text-xs text-slate-400">
-              <div>{c.game_count} games</div>
-              <div>median {c.median_hours}h</div>
+            <div className="text-right shrink-0 font-mono text-xs tabular">
+              <div className="text-[var(--color-text-hi)]">
+                {c.game_count} games
+              </div>
+              <div className="text-[var(--color-text-dim)]">
+                median {c.median_hours}h
+              </div>
             </div>
-          </div>
-          <div className="text-sm text-slate-200 whitespace-pre-line mb-4 leading-relaxed">
-            {c.diagnosis}
-          </div>
+          </header>
 
-          {/* Game thumbnails */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          {/* Diagnosis */}
+          {c.diagnosis && (
+            <p className="text-sm sm:text-base text-[var(--color-text-mid)] whitespace-pre-line leading-relaxed mb-5">
+              {c.diagnosis}
+            </p>
+          )}
+
+          {/* Thumbnails */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
             {c.games.slice(0, 5).map((g) => (
               <a
                 key={g.appid}
                 href={`https://store.steampowered.com/app/${g.appid}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block"
+                className="block group/thumb"
               >
                 <img
                   src={`https://cdn.akamai.steamstatic.com/steam/apps/${g.appid}/header.jpg`}
-                  alt={g.name}
-                  className="w-full aspect-[460/215] object-cover rounded bg-slate-900"
-                  onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+                  alt=""
+                  className="w-full aspect-[460/215] object-cover bg-[var(--color-bg)] grayscale-[15%] group-hover/thumb:grayscale-0 transition-all"
+                  onError={(e) =>
+                    ((e.target as HTMLImageElement).style.display = "none")
+                  }
                 />
-                <div className="text-xs mt-1 truncate">{g.name}</div>
-                <div className="text-xs text-slate-500">{g.playtime_hours}h</div>
+                <div className="font-mono text-xs text-[var(--color-text-mid)] mt-1.5 truncate">
+                  {g.name}
+                </div>
+                <div className="font-mono text-[10px] text-[var(--color-text-dim)] tabular">
+                  {g.playtime_hours}h
+                </div>
               </a>
             ))}
           </div>
-        </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function SleepingGrid({
+  games,
+}: {
+  games: { appid: number; name: string; playtime_min: number }[];
+}) {
+  if (games.length === 0) {
+    return (
+      <div className="border border-[var(--color-border)] py-16 px-6 text-center">
+        <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-3">
+          clean shelf
+        </p>
+        <p
+          className="font-display text-2xl text-[var(--color-text-hi)]"
+          style={{ fontWeight: 500 }}
+        >
+          no sleeping games
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      {games.map((g) => (
+        <a
+          key={g.appid}
+          href={`https://store.steampowered.com/app/${g.appid}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block bg-[var(--color-surface-1)] border border-[var(--color-border)] hover:border-[var(--color-border-strong)] p-3 transition-colors group"
+        >
+          <img
+            src={`https://cdn.akamai.steamstatic.com/steam/apps/${g.appid}/header.jpg`}
+            alt=""
+            className="w-full aspect-[460/215] object-cover bg-[var(--color-bg)] grayscale-[20%] group-hover:grayscale-0 transition-all mb-2"
+            onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+          />
+          <div className="text-sm text-[var(--color-text-hi)] truncate">
+            {g.name}
+          </div>
+          <div className="font-mono text-[10px] text-[var(--color-coral)] tabular uppercase tracking-wider mt-0.5">
+            {g.playtime_min}m played
+          </div>
+        </a>
       ))}
     </div>
   );
