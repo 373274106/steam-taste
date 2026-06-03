@@ -324,7 +324,26 @@ git push                                   # 自动触发 Vercel + Render 重新
 
 ## 10. 待优化（按优先级）
 
-> **最近一次重排：2026-06-04**。README 已完成（commit `90e5299`），项目处于"产品打磨 + 决定是否继续加深度"阶段。下面按对话里达成的 ROI 排序。
+> **最近一次重排：2026-06-04 晚**。
+
+### Scoreboard
+
+**剩下没做的（按 ROI 排序）：**
+1. ⭐ **Render 冷启动修复**（~1 小时）—— 唯一阻挡 "live demo 链接能体面投出去" 的事
+2. **扩 corpus 5k → 15k**（一个周末）—— 解决长尾老游戏推荐 + 给 Phase 4+ 翻盘机会
+3. **Phase 5: Bayesian + multi-query**（数天）—— 让 "multi-query similarity" 从规划变成上线
+4. **ErrorState 补 i18n**（1-2 小时）—— 已是唯一未翻译的页面
+5. LLM 文案润色 / 协同过滤 / 价格分析（都是 nice-to-have，不做也无伤）
+
+**已完成（自上次同步以来 4 个 commit）：**
+- ✅ Regret 文案多样化（commit `eb764d4`）
+- ✅ release_year 偏置 + fresh_fit mode（commit `95a8792`）
+- ✅ 中英双语 i18n（commit `8eb11ee`）
+- ✅ HANDOFF 同步（commit `1a55f22`）
+
+**更早完成：** README + 简历段落 (`90e5299`) · 闭式归因 + closest_match (`246bab9`) · 雷达图 + 排印改版 (`577a476`) · Playprint rebrand (`c56c894`) · Phase 4 自训练 embedding (`d7cfe8b`)
+
+---
 
 ### 优先级 1 — 已完成
 - ✅ **README.md**（commit `90e5299`，含三路检索消融表 + 闭式归因故事 + 截图）
@@ -385,33 +404,45 @@ git push                                   # 自动触发 Vercel + Render 重新
 
 ## 11. 待调查 / 已知小问题
 
-- ✅ ~~SteamID 精度~~（修了）
-- ✅ ~~CORS 尾斜杠~~（修了）
-- ✅ ~~Vercel SPA 404~~（修了）
+### 仍然 open
+
+- ⚠️ **Render free tier 冷启动 30s**——已知限制，不算 bug。但对 portfolio 体验影响大，见 §10 scoreboard #1。
+- ⚠️ **Top recs 倾向长尾老游戏**：corpus 是按 SteamSpy 销量 top-5k 抓的，新游戏覆盖不足。`fresh_fit` mode（commit `95a8792`）能缓解但治标，根治要扩 corpus（§10 scoreboard #2）。
+- ⚠️ **ErrorState 未 i18n**：i18n commit 跳过了——`diagnose()` 的三个 diagnosis（私密 / 找不到 / 网络）是多段 JSX + 嵌套列表，不是平面字符串。翻译需把 body 拆 `<Trans>` 组件 + list items 拆 keys。预计 1-2 小时，优先级低（错误路径访问频率低）。
+- ⚠️ **雷达图 narrow viewport 标签内边距**：~900px 以下时左右两侧长名字（如 "Great Soundtrack"）紧贴 SVG 边缘。不截断，只是挤。修法：[TagRadar.tsx](frontend/src/components/TagRadar.tsx) 里 `radius = center * 0.62` 降到 `0.55`，或外层套 `px-2`。
+
+### 信息性 / 易踩坑
+
+- ℹ️ **评价数据已经在用**：`recommend()` 有 `min_reviews=50` + `min_quality=0.65` 硬过滤 + `(0.85 + 0.30*quality)` 软加成（[taste_engine.py:_ensure_extended_meta()](backend/taste_engine.py)）。新对话别再以为没接入评价。
+- ℹ️ **`explain()` 签名是 3 元组**（`shared_tags`, `evidence`, `closest_match`），不是 2 元组。目前只有 [main.py:_build_rec_card](backend/main.py) 和 [taste_engine.py:format_recommendations](backend/taste_engine.py) 调用，都已更新。
+- ℹ️ **新 API 契约（i18n / fresh_fit 引入）**：
+  - `GET /api/taste/{steamid}/regret?lang=zh|en` —— `lang` 默认 zh，未知值退回 zh（不报错）
+  - `GET /api/taste/{steamid}/recommend/new?mode=...` —— `mode` 合法值 `best_fit | hidden_gem | stretch | fresh_fit`（fresh_fit 是新加的）
+
+### 已修复（按时间倒序）
+
+- ✅ ~~Regret 文案重复~~ — commit `eb764d4`
+- ✅ ~~`release_date` 未用于偏置~~ — commit `95a8792`
+- ✅ ~~高时长宽 tag 游戏霸占归因~~ — closed-form decomposition + closest_match，commit `246bab9`
+- ✅ ~~`explain()` 大库 SQL 风暴~~ — 改为纯 in-memory sparse 点积，commit `246bab9`
 - ✅ ~~Vite 类型缺失构建失败~~（修了）
-- ⚠️ Render free tier 冷启动 30s——已知限制，不算 bug
-- ⚠️ Top recommendations 仍可能倾向长尾游戏，原因：corpus 是按 SteamSpy 销量 top-5k 抓的，新游戏覆盖不足。`release_year` 偏置（commit `95a8792`，用户切到 fresh_fit）能缓解但治标，根治要扩 corpus（见 §10.4 第 5 条）。
-- ✅ ~~Regret 文案重复~~（修了 — commit `eb764d4`，模板池 + domain-aware 分支）
-- ✅ ~~`release_date` 未用于偏置~~（修了 — commit `95a8792`，新增 fresh_fit mode）
-- ℹ️ 评价数据**已经在用**：`recommend()` 有 `min_reviews=50` + `min_quality=0.65` 硬过滤 + `(0.85 + 0.30*quality)` 软加成（[taste_engine.py:255-270](backend/taste_engine.py#L255-L270)）。新对话别误以为评价没接入。
-- ⚠️ **ErrorState 未 i18n**：i18n commit 中跳过了——`diagnose()` 的三个 diagnosis（私密 / 找不到 / 网络）是多段 JSX + 嵌套列表，不是平面字符串。要翻译需把 body 拆出 `<Trans>` 组件 + 把 list items 拆成 keys。预计 1-2 小时，但优先级低（错误路径访问频率低）。
-- ✅ ~~`explain()` 大库 SQL 风暴~~（修了——`explain()` 已改为纯 in-memory sparse 点积）
-- ✅ ~~高时长宽 tag 游戏霸占归因~~（修了 — closed-form decomposition + closest-fit slot；详见 §7 Phase 6.6）
-- ⚠️ 雷达图 narrow viewport（~900px 以下）左右两侧 tag label（特别是长名字如 "Great Soundtrack"）紧贴 SVG 边缘没呼吸空间。不截断，只是挤。修法：把 [TagRadar.tsx](frontend/src/components/TagRadar.tsx) 里 `radius = center * 0.62` 降到 `0.55`，或外层套 `px-2`。
-- ⚠️ `explain()` 签名已从 2 元组变 3 元组（新增 `closest_match`）；目前只有 `main.py:_build_rec_card` 和 `taste_engine.py:format_recommendations` 调用，都已更新。如果新代码再调要注意。
+- ✅ ~~Vercel SPA 404~~（修了）
+- ✅ ~~CORS 尾斜杠~~（修了）
+- ✅ ~~SteamID 精度~~（修了）
 
 ---
 
 ## 12. 与新对话的协作建议
 
 接手新对话时：
-1. **不需要重读所有源代码**——先读 `steam-game-advisor-project.md` 拿到设计意图，再针对要改的模块读对应文件
-2. **不要重复造轮子**——上面"已完成"列表里的功能都跑通了，不要建议再做一遍
-3. **GIT 操作要小心**——4 commit 历史是干净的，每个 commit 都有意义。新改动也保持单一职责的 commit。
-4. **改动后必须本地跑通再 push**——push = 自动重新部署生产。本地：
+1. **先看 §10 scoreboard 拿全局**——一眼能看到剩下没做的 5 件事 + 最近完成的 4 个 commit
+2. **不需要重读所有源代码**——先读 `steam-game-advisor-project.md` 拿到设计意图，再针对要改的模块读对应文件
+3. **不要重复造轮子**——上面"已完成"列表里的功能都跑通了，不要建议再做一遍
+4. **GIT 操作要小心**——每个 commit 都单一职责。新改动尽量同样原则（参考最近 3 commit 的拆分粒度：regret / fresh_fit / i18n 各一个）
+5. **改动后必须本地跑通再 push**——push = 自动重新部署生产。本地：
    - 后端：`py -m uvicorn backend.main:app --reload`
    - 前端：`cd frontend && npm run dev`
-5. **README 是下一步最高优先级**——参考"待优化"§10.1
+6. **当前最高优先级 = Render 冷启动**——参考 §10 scoreboard #1。修了之后 portfolio 链接才能体面地发出去。
 
 ---
 
