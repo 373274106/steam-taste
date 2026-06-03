@@ -1,0 +1,50 @@
+# Secrets
+.env
+.env.local
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+
+# Data (large, regenerable)
+data/*.db
+data/*.npz
+data/*.npy
+# But keep small JSON artifacts that document corpus shape:
+!data/.gitkeep
+
+# Editor / tools
+.vscode/
+.idea/
+*.swp
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Probe / scratch artifacts
+scripts/probe_games_cache.json
+scripts/probe_results.csv
+scripts/diagnose_output.txt
+scripts/real_user_output*.txt
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/*.local
+frontend/.env*
+!frontend/.env.example
+
+# Bundled data file occasionally written by phase1_build_index.py
+data/inverted_index.json
+data/tag_vocab.json
+data/appid_order.json

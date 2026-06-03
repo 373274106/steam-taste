@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* Steam-ish dark palette + brand accent */
+@theme {
+  --color-steam-blue: #1b8eff;
+  --color-steam-dark: #0e1015;
+  --color-steam-panel: #181b22;
+  --color-steam-border: #2a2f3a;
+}
+
+html, body, #root { height: 100%; }
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--color-steam-dark);
+}
+
+/* Subtle scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a2f3a; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #3a4150; }
