@@ -1,0 +1,9 @@
+# Backend runtime dependencies (Python).
+# Pinned to compatible ranges — let Render resolve fresh patch versions.
+
+fastapi>=0.115,<1
+uvicorn[standard]>=0.32,<1
+requests>=2.31,<3
+numpy>=1.26,<3
+scipy>=1.11,<2
+scikit-learn>=1.3,<2
