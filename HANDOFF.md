@@ -159,6 +159,10 @@ e:\study\project\
 ## 6. Git 历史
 
 ```
+8eb11ee  Add EN / 中 language toggle with bilingual UI + regret diagnoses
+95a8792  Add release_year recency bias + fresh_fit recommendation mode
+eb764d4  Vary regret diagnoses: template pool + domain-aware branches
+90e5299  Add README and bring HANDOFF + project plan up to current state
 246bab9  Fix rec attribution: closed-form decomposition + closest-fit slot
 577a476  Refine Result typography + add tag-affinity radar
 8560c44  Redesign Act II (Recommendations) + Act III (Library Regret)
@@ -320,50 +324,62 @@ git push                                   # 自动触发 Vercel + Render 重新
 
 ## 10. 待优化（按优先级）
 
-### 优先级 1（必做，对 portfolio 影响大）
-1. **写 README.md**（仓库首页空的，面试官会先看）
-   - 项目截图（taste / recs / regret 三张）
-   - 一句话定位 + 视频/动图（可选）
-   - 技术栈徽章
-   - 本地启动指南
-   - 公开 demo 链接
-   - 实验结论："tag-based 在 game-game similarity 上比 transformer 嵌入高 30%"
+> **最近一次重排：2026-06-04**。README 已完成（commit `90e5299`），项目处于"产品打磨 + 决定是否继续加深度"阶段。下面按对话里达成的 ROI 排序。
 
-2. **简历介绍段落**（中英双语版）
-   - 已有素材在 `steam-game-advisor-project.md` 的 §12 节
-   - 可以再扩展添加实际成绩数字：「在真实 1095 款库测试中识别出 311 款 untouched games + 45 个 regret patterns」
+### 优先级 1 — 已完成
+- ✅ **README.md**（commit `90e5299`，含三路检索消融表 + 闭式归因故事 + 截图）
+- ✅ **简历段落初稿**（已写进 `steam-game-advisor-project.md` §12 中英双版）
 
-### 优先级 2（可选打磨）
-3. **Render 冷启动应对**
-   - 加一个 cron job 每 10 分钟 ping `/api/health` 保持活跃（uptimerobot.com 免费）
-   - 或前端在 Home 页就静默 ping 一下后端预热
-   - 或升级 Render Starter $7/月
+### 优先级 2 — 用户体验底线
 
-4. **隐私 / Demo 模式 UX 改进**
-   - Demo 模式可以让用户看到 "Demo Player" 的具体游戏库构成（透明）
-   - 添加"分享我的 taste 画像"截图导出按钮（增加传播）
+1. **修 Render 冷启动**（~1 小时）⭐ **唯一一个还没做的 P2**
+   - **uptimerobot.com 心跳**（5 分钟）：免费档每 5 分钟 ping `/api/health`，dyno 永不冻
+   - **+ 前端 Home 页静默预热**（10 分钟代码）：用户打开 Home 时后台 `fetch('/api/health')`，等他贴完 SteamID 后端已经热
+   - **不修的代价**：每个第一次访问 live demo 的招聘人都要等 30s，直接拉低 portfolio 印象
 
-5. **错误状态扩展**
-   - 添加 Steam API 限流的友好提示
-   - 添加 Render 冷启动期间的 "服务正在启动..." 提示（30s 倒计时）
+2. ✅ ~~**Regret 文案多样化**~~（commit `eb764d4`）
+   - Mixed 4 变体（single_anchor_deep / high_untouched_ratio / saturation / classic）+ Pure 9 domain 模板（survival_craft / grand_strategy / souls_like / roguelite / horror / jrpg / cozy / simulation / shmup）+ 3 quantitative fallbacks
+   - 每模板有 `zh` + `en` 平行字段，[regret_detector.py:_build_diagnosis(cluster, lang)](backend/regret_detector.py)，i18n 用
 
-### 优先级 3（算法深度，post-MVP）
-6. ✅ ~~**Phase 4: Tag co-occurrence embedding**~~（已完成，PPMI + SVD 50 维生产已用，+2.4pp probe）
-7. ✅ ~~**Phase 4+: Trained dual encoder**~~（已完成，但消融显示在该 corpus 上不优于 TF-IDF；保留为简历的"诚实实验"故事，runtime 不强制依赖）
+3. ✅ ~~**release_year 偏置 + fresh_fit mode**~~（commit `95a8792`）
+   - [taste_engine.py:_parse_year()](backend/taste_engine.py) regex，corpus 4967/4985 命中 100%
+   - 公式 `recency = 1 / (1 + age/5)`，参考年份取 corpus 最新年（自动跟刷数据走）
+   - `recommend(mode="fresh_fit")` 应用 `sims *= 1 + 0.30 * recency`，叠加在 quality boost 之上
+   - 前端 [RecommendationsTab](frontend/src/components/RecommendationsTab.tsx) 加 best fit / fresh fit pill toggle，切换轻量级 refetch 不重跑 pipeline
 
-8. **Phase 5: Bayesian taste posterior + multi-query**
+### 优先级 3 — 国际化
+
+4. ✅ ~~**中英文切换（i18n）**~~（commit `8eb11ee`）
+   - `react-i18next` + `i18next-browser-languagedetector`，locale JSON 在 [src/locales](frontend/src/locales)
+   - Masthead 顶栏 `EN / 中` pill 切换器，localStorage 持久化（key=`playprint.lang`）
+   - 后端 `regret_endpoint(steamid, lang)` → `detect_regret(..., lang)` → `_build_diagnosis(cluster, lang)`
+   - 切换语言时 [Result.tsx](frontend/src/pages/Result.tsx) 自动 refetch regret（前端 t() 直接生效，后端 prose 必须 refetch）
+   - **ErrorState 本轮未翻译**——多段富 JSX 诊断 + 嵌套列表，refactor 量大，列入 §11 已知遗留
+
+### 优先级 4 — 数据 / 算法深化（高工程量、ROI 因目标而异）
+
+5. **扩 corpus 5k → 15k**（一个周末）
+   - `phase1_fetch_corpus.py` 支持续传，~6-9 小时 fetch + `phase1_build_index` 10 秒 + `phase4_build_tag_embedding` + `phase4plus_train` 10 几分钟
+   - 数据增量 12MB → 35-40MB，git 仍可接受
+   - 法律 / 政策：Steam Store + SteamSpy 公开数据，没有限制
+   - 收益：解决推荐总是长尾老游戏的问题（5k 是按销量 top 抓的，新游戏漏掉很多）；**且可能让 Phase 4+ trained encoder 真的超过 SPPMI 基线**——大数据量是 contrastive learning 显出优势的前提，跑出来又是一个 portfolio 故事「我重新跑了消融，结论变了」
+   - 不建议自动化（不要 cron），人工 6 个月一刷
+
+6. **Phase 5: Bayesian taste posterior + multi-query**（数天）
    - taste vector 升级为带置信度的后验
-   - 5+ similar query 维度（similar_but_slower / similar_but_chill 等）
+   - 5+ similar query 维度（similar / for-you / slower / chill / hidden / shorter）
+   - 实现 §6.7 / §6.5 里原 spec 计划过但未建的"相似游戏多 query"页面
+   - 让简历"multi-query similarity system"从"规划过"变成"上线了"
 
-9. **Phase 7+: 价格 / 评论分析**（如果方向再扩）
-   - 重新引入 ITAD 价格数据（购买时机）
-   - Steam 评论摘要（LLM 摘要，可选）
-   - 现在的代码里有 `steam_client.py` 但只用了 GetOwnedGames，扩展容易
+### 优先级 5 — 不太可能做但记录
 
-### 优先级 4（不太可能做但记录一下）
-9. **多语言支持**：UI 文案目前是中英混用，整理成专门的 i18n
-10. **更大 corpus**：从 5000 扩到 15000，覆盖更多长尾用户库
-11. **协同过滤**：如果有用户访问数据后，做 "owners of X also own Y"
+7. **LLM 文案润色**（半天）
+   - 自然接入点：用 LLM 生成每个 regret cluster 的独特一句话诊断（替换上面 #2 的模板池）
+   - 或生成 taste hero quote（替换现有模板）
+   - **但**：前面 #2 已经能给 80% 效果且零成本零延迟；只在 #2 做完仍觉不够时考虑
+   - 项目"故意不用 LLM"在面试里是个**更强的叙事**，加 LLM 反而减分（详见 §13 协作建议里的"实证主义"段）
+8. **协同过滤**（中长期）：如果有真用户访问数据后，做 "owners of X also own Y"
+9. **价格 / 评论分析**：重新引入 ITAD，做"Similar but cheaper"维度
 
 ---
 
@@ -374,7 +390,11 @@ git push                                   # 自动触发 Vercel + Render 重新
 - ✅ ~~Vercel SPA 404~~（修了）
 - ✅ ~~Vite 类型缺失构建失败~~（修了）
 - ⚠️ Render free tier 冷启动 30s——已知限制，不算 bug
-- ⚠️ Top recommendations 倾向旧 RPG（Two Worlds 2008 / Lightning Returns 等）。原因：用户 1095 款库已经包含所有现代好 RPG，算法只能在长尾里找。这不是 bug，是真实约束。要优化要么扩 corpus 要么加 release_year 偏置。
+- ⚠️ Top recommendations 仍可能倾向长尾游戏，原因：corpus 是按 SteamSpy 销量 top-5k 抓的，新游戏覆盖不足。`release_year` 偏置（commit `95a8792`，用户切到 fresh_fit）能缓解但治标，根治要扩 corpus（见 §10.4 第 5 条）。
+- ✅ ~~Regret 文案重复~~（修了 — commit `eb764d4`，模板池 + domain-aware 分支）
+- ✅ ~~`release_date` 未用于偏置~~（修了 — commit `95a8792`，新增 fresh_fit mode）
+- ℹ️ 评价数据**已经在用**：`recommend()` 有 `min_reviews=50` + `min_quality=0.65` 硬过滤 + `(0.85 + 0.30*quality)` 软加成（[taste_engine.py:255-270](backend/taste_engine.py#L255-L270)）。新对话别误以为评价没接入。
+- ⚠️ **ErrorState 未 i18n**：i18n commit 中跳过了——`diagnose()` 的三个 diagnosis（私密 / 找不到 / 网络）是多段 JSX + 嵌套列表，不是平面字符串。要翻译需把 body 拆出 `<Trans>` 组件 + 把 list items 拆成 keys。预计 1-2 小时，但优先级低（错误路径访问频率低）。
 - ✅ ~~`explain()` 大库 SQL 风暴~~（修了——`explain()` 已改为纯 in-memory sparse 点积）
 - ✅ ~~高时长宽 tag 游戏霸占归因~~（修了 — closed-form decomposition + closest-fit slot；详见 §7 Phase 6.6）
 - ⚠️ 雷达图 narrow viewport（~900px 以下）左右两侧 tag label（特别是长名字如 "Great Soundtrack"）紧贴 SVG 边缘没呼吸空间。不截断，只是挤。修法：把 [TagRadar.tsx](frontend/src/components/TagRadar.tsx) 里 `radius = center * 0.62` 降到 `0.55`，或外层套 `px-2`。
