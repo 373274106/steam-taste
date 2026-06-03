@@ -16,6 +16,7 @@ import ErrorState from "../components/ErrorState";
 
 type Tab = "taste" | "recs" | "regret";
 type LoadStep = "library" | "taste" | "recs" | "regret" | "done";
+type DiscoverMode = "best_fit" | "fresh_fit";
 
 const ACTS: { key: Tab; roman: string; caption: string }[] = [
   { key: "taste", roman: "i", caption: "your taste" },
@@ -30,17 +31,22 @@ export default function Result() {
   const steamid = steamidParam ?? "-1";
 
   const [tab, setTab] = useState<Tab>("taste");
+  const [discoverMode, setDiscoverMode] = useState<DiscoverMode>("best_fit");
 
   const [summary, setSummary] = useState<ProfileSummary | null>(null);
   const [taste, setTaste] = useState<TasteProfile | null>(null);
   const [recsBest, setRecsBest] = useState<RecommendResponse | null>(null);
   const [recsOwned, setRecsOwned] = useState<RecommendResponse | null>(null);
+  const [recsRefreshing, setRecsRefreshing] = useState(false);
   const [regret, setRegret] = useState<RegretReport | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<LoadStep>("library");
   const [error, setError] = useState<string | null>(null);
 
+  // Initial pipeline — taste / recs / regret in sequence. Uses the current
+  // discoverMode for the *new* recs call. Mode flips after this resolves are
+  // handled by the lightweight refetch effect below.
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -60,7 +66,7 @@ export default function Result() {
         setStep("recs");
 
         const [rb, ro] = await Promise.all([
-          api.recommendNew(steamid, "best_fit", 10),
+          api.recommendNew(steamid, discoverMode, 10),
           api.recommendOwned(steamid, 10),
         ]);
         if (cancelled) return;
@@ -82,7 +88,34 @@ export default function Result() {
     return () => {
       cancelled = true;
     };
+    // discoverMode intentionally excluded — toggling it should NOT re-run the
+    // full pipeline, only refresh the discover-new list. See effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [steamid]);
+
+  // Lightweight refetch when the user toggles discover mode after initial
+  // load. Skips on first render (recsBest is null) so it doesn't double-fire
+  // with the pipeline above.
+  useEffect(() => {
+    if (recsBest === null) return;
+    let cancelled = false;
+    setRecsRefreshing(true);
+    api
+      .recommendNew(steamid, discoverMode, 10)
+      .then((r) => {
+        if (!cancelled) setRecsBest(r);
+      })
+      .catch(() => {
+        // Silent: keep existing recs visible if the toggle fetch fails.
+      })
+      .finally(() => {
+        if (!cancelled) setRecsRefreshing(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [discoverMode]);
 
   if (loading) return <LoadingState step={step} />;
   if (error) return <ErrorState message={error} />;
@@ -202,7 +235,13 @@ export default function Result() {
       >
         {tab === "taste" && <TasteProfileTab taste={taste} onSelectTab={setTab} />}
         {tab === "recs" && (
-          <RecommendationsTab recsNew={recsBest!} recsOwned={recsOwned!} />
+          <RecommendationsTab
+            recsNew={recsBest!}
+            recsOwned={recsOwned!}
+            discoverMode={discoverMode}
+            onDiscoverModeChange={setDiscoverMode}
+            recsRefreshing={recsRefreshing}
+          />
         )}
         {tab === "regret" && <RegretTab regret={regret!} />}
       </section>

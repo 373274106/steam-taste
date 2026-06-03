@@ -348,7 +348,7 @@ def recommend_new(steamid: int, mode: str = "best_fit", k: int = 10):
     except SteamApiError as e:
         raise HTTPException(403, str(e))
 
-    if mode not in ("best_fit", "hidden_gem", "stretch"):
+    if mode not in ("best_fit", "hidden_gem", "stretch", "fresh_fit"):
         raise HTTPException(400, f"unknown mode '{mode}'")
 
     taste, _ = eng.compute_taste_vector(library)

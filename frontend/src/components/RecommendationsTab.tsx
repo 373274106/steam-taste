@@ -1,9 +1,14 @@
 import { useState } from "react";
 import type { RecCard, RecommendResponse } from "../lib/types";
 
+type DiscoverMode = "best_fit" | "fresh_fit";
+
 interface Props {
   recsNew: RecommendResponse;
   recsOwned: RecommendResponse;
+  discoverMode: DiscoverMode;
+  onDiscoverModeChange: (m: DiscoverMode) => void;
+  recsRefreshing: boolean;
 }
 
 type Mode = "new" | "owned";
@@ -23,7 +28,18 @@ const MODE_META: Record<Mode, { label: string; caption: string; intro: string }>
   },
 };
 
-export default function RecommendationsTab({ recsNew, recsOwned }: Props) {
+const DISCOVER_MODE_META: Record<DiscoverMode, { label: string; hint: string }> = {
+  best_fit: { label: "best fit", hint: "highest taste similarity" },
+  fresh_fit: { label: "fresh fit", hint: "best fit, biased toward newer titles" },
+};
+
+export default function RecommendationsTab({
+  recsNew,
+  recsOwned,
+  discoverMode,
+  onDiscoverModeChange,
+  recsRefreshing,
+}: Props) {
   const [mode, setMode] = useState<Mode>("new");
   const items = mode === "new" ? recsNew.items : recsOwned.items;
 
@@ -80,6 +96,38 @@ export default function RecommendationsTab({ recsNew, recsOwned }: Props) {
             {MODE_META[mode].intro}
           </p>
         </div>
+
+        {/* Discover-mode pills — only meaningful on the "new" tab */}
+        {mode === "new" && (
+          <div className="mt-6 flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mr-1">
+              ranking
+            </span>
+            {(Object.keys(DISCOVER_MODE_META) as DiscoverMode[]).map((dm) => {
+              const active = discoverMode === dm;
+              return (
+                <button
+                  key={dm}
+                  onClick={() => onDiscoverModeChange(dm)}
+                  disabled={recsRefreshing}
+                  title={DISCOVER_MODE_META[dm].hint}
+                  className={`font-mono text-[11px] uppercase tracking-[0.18em] tabular px-3 py-1.5 border transition-colors ${
+                    active
+                      ? "border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-surface-1)]"
+                      : "border-[var(--color-border)] text-[var(--color-text-mid)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-hi)]"
+                  } disabled:opacity-50 disabled:cursor-wait`}
+                >
+                  {DISCOVER_MODE_META[dm].label}
+                </button>
+              );
+            })}
+            {recsRefreshing && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] ml-2 animate-pulse">
+                · re-ranking
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Results — editorial review entries */}

@@ -15,14 +15,32 @@ Steam library fetching lives in backend/steam_client.py (Phase 2 Step B).
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from math import log
 from pathlib import Path
 from typing import Iterable
 
 import numpy as np
 from scipy import sparse
+
+
+# Year currently used as the "now" reference for recency scoring. We use the
+# corpus's most recent release year (computed lazily, so re-fetching new
+# games shifts the curve automatically) and fall back to wall-clock UTC if
+# the corpus is empty.
+_YEAR_RE = re.compile(r"\b(19[7-9]\d|20[0-3]\d)\b")
+
+
+def _parse_year(s: str | None) -> int | None:
+    """Extract a 4-digit year from a Steam release_date string like
+    'Nov 1, 2000' or 'Q4 2024'. Returns None when no plausible year fits."""
+    if not s:
+        return None
+    m = _YEAR_RE.search(s)
+    return int(m.group(1)) if m else None
 
 
 HERE = Path(__file__).parent
@@ -236,8 +254,9 @@ class TasteEngine:
           - type='game' filter (no DLC, software, demo, music)
           - min_reviews filter (kill unreliable signal)
           - min_quality filter (kill widely-disliked games)
-          - mode-specific scoring tweak (hidden_gem / stretch / best_fit)
+          - mode-specific scoring tweak (best_fit / hidden_gem / stretch / fresh_fit)
           - quality boost (soft preference for highly-rated games)
+          - fresh_fit only: recency boost on top of the quality boost
         """
         # tfidf @ taste = cosine since both normalized
         sims = self.tfidf @ taste_vec
@@ -264,10 +283,17 @@ class TasteEngine:
             sims = sims - 0.10 * np.log1p(popularity / 1_000_000)
         elif mode == "stretch":
             sims = sims * (1.0 - np.abs(sims - 0.55))
-        # best_fit: no extra tweak
+        # best_fit / fresh_fit: no pre-quality tweak
 
         # 5. Soft quality boost — multiply by (0.85 + 0.30 * quality) → range 1.04–1.15
         sims = np.where(sims > 0, sims * (0.85 + 0.30 * quality), sims)
+
+        # 6. fresh_fit recency multiplier — applied after quality so the two
+        #    soft preferences stack instead of competing. Range 1.00–1.30:
+        #    age 0y → ×1.30, 5y → ×1.15, 15y → ×1.075.
+        if mode == "fresh_fit":
+            recency = self._recency_array()
+            sims = np.where(sims > 0, sims * (1.0 + 0.30 * recency), sims)
 
         top = np.argsort(sims)[-k:][::-1]
         return [(self.appid_order[i], float(sims[i])) for i in top if sims[i] > 0]
@@ -292,31 +318,42 @@ class TasteEngine:
         self._ensure_extended_meta()
         return self._is_game_arr
 
+    def _recency_array(self) -> np.ndarray:
+        """Per-row recency in (0, 1], smooth decay from the corpus's reference
+        year. Unknown release date → neutral midpoint 0.5."""
+        self._ensure_extended_meta()
+        return self._recency_arr
+
     def is_game(self, appid: int) -> bool:
         """O(1) check whether an appid is a true game in the corpus."""
         self._ensure_extended_meta()
         return appid in self._game_appids_set
 
     def _ensure_extended_meta(self) -> None:
-        """One-shot load of popularity, quality, review counts, and type from SQLite."""
+        """One-shot load of popularity, quality, review counts, type, and
+        release year from SQLite. The recency array is derived from the
+        latest year actually present in the corpus, so adding fresh games
+        in a later refetch automatically shifts the reference point."""
         if hasattr(self, "_pop_arr"):
             return
         with self._conn() as c:
             placeholders = ",".join("?" * len(self.appid_order))
             cur = c.execute(
-                f"SELECT appid, owners_low, positive_reviews, negative_reviews, type "
+                f"SELECT appid, owners_low, positive_reviews, negative_reviews, type, release_date "
                 f"FROM games WHERE appid IN ({placeholders})",
                 self.appid_order,
             )
-            rows = {a: (o or 0, p or 0, n or 0, t or "") for a, o, p, n, t in cur.fetchall()}
+            rows = {a: (o or 0, p or 0, n or 0, t or "", d or "")
+                    for a, o, p, n, t, d in cur.fetchall()}
 
         pop = []
         quality = []
         rev_count = []
         is_game = []
+        years: list[int | None] = []
         game_set: set[int] = set()
         for a in self.appid_order:
-            o, p, n, t = rows.get(a, (0, 0, 0, ""))
+            o, p, n, t, d = rows.get(a, (0, 0, 0, "", ""))
             pop.append(o)
             total = p + n
             # Smoothed positive ratio: (p + 5) / (total + 10) — Laplace-style prior at 0.5
@@ -326,12 +363,30 @@ class TasteEngine:
             is_game.append(is_g)
             if is_g:
                 game_set.add(a)
+            years.append(_parse_year(d))
 
         self._pop_arr = np.asarray(pop, dtype=np.float64)
         self._quality_arr = np.asarray(quality, dtype=np.float64)
         self._review_count_arr = np.asarray(rev_count, dtype=np.float64)
         self._is_game_arr = np.asarray(is_game, dtype=bool)
         self._game_appids_set = game_set
+
+        # Recency: 1 / (1 + age_in_years / 5).
+        # Reference year = max parsed year in corpus, else wall clock.
+        # Games without a parsed year get the neutral midpoint (≈0.5) so
+        # fresh_fit neither boosts nor penalizes them.
+        known = [y for y in years if y is not None]
+        ref_year = max(known) if known else datetime.now(timezone.utc).year
+        recency = np.empty(len(years), dtype=np.float64)
+        neutral = 1.0 / (1.0 + 5.0 / 5.0)  # = 0.5; what a 5-year-old game gets
+        for i, y in enumerate(years):
+            if y is None:
+                recency[i] = neutral
+            else:
+                age = max(0, ref_year - y)
+                recency[i] = 1.0 / (1.0 + age / 5.0)
+        self._recency_arr = recency
+        self._recency_ref_year = ref_year
 
     # ------------------------------------------------------------
     # Explanation layer
