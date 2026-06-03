@@ -67,6 +67,10 @@ export interface RecCard {
   match_pct: number;
   shared_tags: string[];
   evidence_games: EvidenceGame[];
+  /** Library game with the highest pure tag-similarity to this rec, surfaced
+   *  only when it isn't already one of the playtime-weighted drivers. Lets a
+   *  small but on-target game show alongside the big broad driver(s). */
+  closest_match: EvidenceGame | null;
   steam_url: string;
   current_playtime_min?: number; // only on "owned" recs
 }

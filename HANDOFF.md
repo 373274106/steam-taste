@@ -322,7 +322,7 @@ git push                                   # 自动触发 Vercel + Render 重新
 - ✅ ~~Vite 类型缺失构建失败~~（修了）
 - ⚠️ Render free tier 冷启动 30s——已知限制，不算 bug
 - ⚠️ Top recommendations 倾向旧 RPG（Two Worlds 2008 / Lightning Returns 等）。原因：用户 1095 款库已经包含所有现代好 RPG，算法只能在长尾里找。这不是 bug，是真实约束。要优化要么扩 corpus 要么加 release_year 偏置。
-- ⚠️ 大 SteamID 库（1000+ 款）`explain()` 会调几千次 SQLite query 取标签。当前耗时 5-10 秒可接受，但有优化空间（预加载所有库游戏的 tag 集合到内存一次）。
+- ✅ ~~`explain()` 大库 SQL 风暴~~（修了——`explain()` 已改为纯 in-memory sparse 点积，归因公式也修正为 `log(1+hours) × cosine(g, cand)` 的闭式拆解，不再被高时长游戏霸占归因）
 
 ---
 

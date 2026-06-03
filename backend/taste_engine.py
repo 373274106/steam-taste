@@ -344,52 +344,82 @@ class TasteEngine:
         library: list[tuple[int, int]],
         max_shared_tags: int = 4,
         max_evidence: int = 2,
-    ) -> tuple[list[str], list[tuple[int, str, int]]]:
+        min_relative_contrib: float = 0.20,
+        min_closest_sim: float = 0.30,
+    ) -> tuple[list[str], list[tuple[int, str, int]], tuple[int, str, int] | None]:
         """Why was this game recommended?
 
         Returns:
-          shared_tags  - high-affinity tags the candidate has that the user's taste has
-          evidence     - user's games that contributed most: (appid, name, playtime_min)
+          shared_tags    - high-affinity tags the candidate has that the user's taste has
+          evidence       - library games that drove the match (playtime × fit)
+          closest_match  - the library game with the highest pure tag-similarity to
+                           the candidate, surfaced only when it is NOT already one of
+                           the drivers and the similarity passes `min_closest_sim`.
+                           Resolves the "broad high-playtime game eats every
+                           attribution" problem by giving the on-target small game
+                           a dedicated slot.
+
+        Attribution is the closed-form decomposition of the recommendation
+        cosine. The taste vector is the L2-normalized playtime-weighted sum
+        of library tf-idf rows, so the per-candidate cosine equals
+            Σ_g [ log(1+hours_g) · cosine(g_vec, cand_vec) ] / ‖raw_taste‖
+        and we rank library games by w_g · cosine(g, cand). A small but
+        on-target library game beats a high-playtime broad game whose tag
+        profile only loosely overlaps. Evidence below `min_relative_contrib`
+        of the top contributor is dropped to suppress filler attributions.
         """
         cand_row = self._row(candidate_appid)
         if cand_row is None:
-            return [], []
+            return [], [], None
         cand_arr = cand_row.toarray().flatten()
         # Element-wise contribution = cand[tag] * taste[tag]
         contrib = cand_arr * taste_vec
         top_cols = np.argsort(contrib)[-max_shared_tags:][::-1]
         shared = [self.vocab[c] for c in top_cols if contrib[c] > 0]
 
-        # Find which library games contributed most to those tags
-        ev_scores: dict[int, float] = {}
-        with self._conn() as c:
-            cand_tags_set = set(shared)
-            for appid, playtime_min in library:
-                if appid == candidate_appid:
-                    continue
-                if appid not in self.appid_to_row:
-                    continue
-                # how many of the shared tags does this lib game have?
-                cur = c.execute(
-                    "SELECT tag FROM game_tags WHERE appid = ?",
-                    (appid,),
-                )
-                lib_tags = {t for (t,) in cur.fetchall()}
-                overlap = len(cand_tags_set & lib_tags)
-                if overlap == 0:
-                    continue
-                hours = playtime_min / 60.0
-                ev_scores[appid] = overlap * log(1.0 + hours)
+        # Per library-game similarity + weighted contribution.
+        # cosine(g, cand) = g_vec · cand_arr since both rows are L2-normalized.
+        all_contribs: list[tuple[int, float, float]] = []  # (appid, w*sim, sim)
+        for appid, playtime_min in library:
+            if appid == candidate_appid:
+                continue
+            row_idx = self.appid_to_row.get(appid)
+            if row_idx is None:
+                continue
+            w = log(1.0 + max(0.0, playtime_min / 60.0))
+            if w <= 0:
+                continue
+            sim = float(self.tfidf[row_idx].multiply(cand_arr).sum())
+            if sim <= 0:
+                continue
+            all_contribs.append((appid, w * sim, sim))
 
-        top_lib = sorted(ev_scores.items(), key=lambda kv: kv[1], reverse=True)[:max_evidence]
-        evidence = []
-        if top_lib:
-            self._load_meta_batch([a for a, _ in top_lib])
-            playtime_lookup = dict(library)
-            for appid, _ in top_lib:
-                name = self._meta_cache.get(appid, ("?",))[0]
-                evidence.append((appid, name, playtime_lookup.get(appid, 0)))
-        return shared, evidence
+        if not all_contribs:
+            return shared, [], None
+
+        playtime_lookup = dict(library)
+
+        # Drivers: top by playtime-weighted contribution
+        all_contribs.sort(key=lambda x: x[1], reverse=True)
+        threshold = all_contribs[0][1] * min_relative_contrib
+        top_lib = [c for c in all_contribs if c[1] >= threshold][:max_evidence]
+        driver_appids = {a for a, _, _ in top_lib}
+
+        self._load_meta_batch([a for a, _, _ in top_lib])
+        evidence: list[tuple[int, str, int]] = [
+            (a, self._meta_cache.get(a, ("?",))[0], playtime_lookup.get(a, 0))
+            for a, _, _ in top_lib
+        ]
+
+        # Closest match: highest pure cosine, only if distinct from drivers and strong enough
+        closest_match: tuple[int, str, int] | None = None
+        cl_appid, _, cl_sim = max(all_contribs, key=lambda x: x[2])
+        if cl_sim >= min_closest_sim and cl_appid not in driver_appids:
+            self._load_meta_batch([cl_appid])
+            name = self._meta_cache.get(cl_appid, ("?",))[0]
+            closest_match = (cl_appid, name, playtime_lookup.get(cl_appid, 0))
+
+        return shared, evidence, closest_match
 
     # ------------------------------------------------------------
     # Phase 4: Tag co-occurrence embedding (PPMI + SVD, self-trained)
@@ -520,7 +550,7 @@ def format_recommendations(
     lines = [f"\n=== {title} ==="]
     for appid, score in recs:
         ref = engine.game_ref(appid)
-        shared, evidence = engine.explain(appid, taste_vec, library)
+        shared, evidence, closest = engine.explain(appid, taste_vec, library)
         lines.append(f"\n[{appid:>8}] {ref.name}  (score {score:.3f})")
         if ref.tags:
             lines.append(f"  tags:     {', '.join(ref.tags)}")
@@ -529,4 +559,6 @@ def format_recommendations(
         if evidence:
             ev_str = ", ".join(f"{n} ({p/60:.0f}h)" for _, n, p in evidence)
             lines.append(f"  because:  {ev_str}")
+        if closest:
+            lines.append(f"  closest:  {closest[1]} ({closest[2]/60:.0f}h)")
     return "\n".join(lines)

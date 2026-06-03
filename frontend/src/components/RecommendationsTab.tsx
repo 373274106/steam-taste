@@ -224,6 +224,20 @@ function RecEntry({
             </div>
           )}
 
+          {/* Closest tag-fit in library — shown when distinct from the volume drivers */}
+          {card.closest_match && (
+            <div className="text-sm text-[var(--color-text-mid)] leading-relaxed -mt-1 pl-4">
+              <span className="text-[var(--color-text-dim)] mr-1">↳</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-accent-soft)] mr-2">
+                closest fit
+              </span>
+              <span className="text-[var(--color-text-hi)]">{card.closest_match.name}</span>
+              <span className="font-mono text-xs text-[var(--color-text-dim)] tabular ml-1">
+                {card.closest_match.playtime_hours}h
+              </span>
+            </div>
+          )}
+
           {/* Footer link */}
           <div className="mt-auto pt-1">
             <a

@@ -316,7 +316,7 @@ def _build_rec_card(
     extra: Optional[dict] = None,
 ) -> dict:
     ref = eng.game_ref(appid)
-    shared, evidence = eng.explain(appid, taste_vec, library)
+    shared, evidence, closest = eng.explain(appid, taste_vec, library)
     pct = _match_pct(match_score)
     card = {
         "appid": appid,
@@ -329,6 +329,10 @@ def _build_rec_card(
             {"appid": a, "name": n, "playtime_hours": round(p / 60, 1)}
             for a, n, p in evidence
         ],
+        "closest_match": (
+            {"appid": closest[0], "name": closest[1], "playtime_hours": round(closest[2] / 60, 1)}
+            if closest else None
+        ),
         "steam_url": f"https://store.steampowered.com/app/{appid}",
     }
     if extra:
