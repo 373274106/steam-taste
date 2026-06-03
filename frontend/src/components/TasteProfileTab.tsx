@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { TasteProfile } from "../lib/types";
+import { useTagLabel } from "../lib/tags";
 import TagRadar from "./TagRadar";
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 
 export default function TasteProfileTab({ taste, onSelectTab }: Props) {
   const { t } = useTranslation();
+  const tagLabel = useTagLabel();
   const tags = taste.top_tags.slice(0, 12);
   const coverage = taste.library_stats.coverage;
 
@@ -108,7 +110,7 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
                       i < 3 ? "text-[var(--color-accent)]" : ""
                     }`}
                   >
-                    {tag.tag}
+                    {tagLabel(tag.tag)}
                   </span>
                   <span className="font-mono text-xs text-[var(--color-text-mid)] tabular w-10 text-right">
                     {tag.weight.toFixed(2)}
@@ -154,7 +156,9 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
                     className="text-base sm:text-lg text-[var(--color-text-hi)] leading-tight tracking-tight"
                     style={{ fontWeight: 600 }}
                   >
-                    {c.name}
+                    {c.dominant_tags.length > 0
+                      ? c.dominant_tags.slice(0, 2).map(tagLabel).join(" / ")
+                      : c.name}
                   </h3>
                 </div>
                 <div className="text-right font-mono text-xs tabular shrink-0">
@@ -202,12 +206,12 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
 
               {/* Dominant tags */}
               <div className="flex flex-wrap gap-1.5 items-center">
-                {c.dominant_tags.slice(0, 4).map((t) => (
+                {c.dominant_tags.slice(0, 4).map((tag) => (
                   <span
-                    key={t}
+                    key={tag}
                     className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 bg-[var(--color-surface-2)] text-[var(--color-text-mid)]"
                   >
-                    {t}
+                    {tagLabel(tag)}
                   </span>
                 ))}
                 {c.is_regret && (

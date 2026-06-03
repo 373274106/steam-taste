@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { RecCard, RecommendResponse } from "../lib/types";
+import { useTagLabel } from "../lib/tags";
 
 type DiscoverMode = "best_fit" | "fresh_fit";
 
@@ -161,6 +162,7 @@ function RecEntry({
   rank: number;
 }) {
   const { t } = useTranslation();
+  const tagLabel = useTagLabel();
   return (
     <li className="bg-[var(--color-surface-1)] border border-[var(--color-border)] hover:border-[var(--color-border-strong)] transition-colors group">
       <div className="grid grid-cols-1 sm:grid-cols-[320px_1fr] gap-0">
@@ -224,12 +226,12 @@ function RecEntry({
           {/* Shared tags */}
           {card.shared_tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              {card.shared_tags.slice(0, 5).map((t) => (
+              {card.shared_tags.slice(0, 5).map((tag) => (
                 <span
-                  key={t}
+                  key={tag}
                   className="font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 bg-[var(--color-surface-2)] text-[var(--color-text-mid)]"
                 >
-                  {t}
+                  {tagLabel(tag)}
                 </span>
               ))}
             </div>

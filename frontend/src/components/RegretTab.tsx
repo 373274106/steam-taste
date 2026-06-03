@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { RegretCluster, RegretReport } from "../lib/types";
+import { useTagLabel } from "../lib/tags";
 
 type Kind = "mixed" | "pure" | "sleeping";
 
@@ -185,6 +186,7 @@ function ClusterList({
   kind: "mixed" | "pure";
 }) {
   const { t } = useTranslation();
+  const tagLabel = useTagLabel();
   if (clusters.length === 0) return null;
   const accent =
     kind === "mixed"
@@ -208,7 +210,7 @@ function ClusterList({
                 className="text-lg sm:text-xl text-[var(--color-text-hi)] leading-tight tracking-tight"
                 style={{ fontWeight: 600 }}
               >
-                {c.dominant_tags.slice(0, 3).join(" / ") || `Cluster ${c.label}`}
+                {c.dominant_tags.slice(0, 3).map(tagLabel).join(" / ") || `Cluster ${c.label}`}
               </h3>
             </div>
             <div className="text-right shrink-0 font-mono text-xs tabular">

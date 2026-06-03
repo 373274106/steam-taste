@@ -1,3 +1,5 @@
+import { useTagLabel } from "../lib/tags";
+
 interface Props {
   data: { tag: string; weight: number }[];
   /** Number of tags to include on the radar. Default 8. */
@@ -19,6 +21,7 @@ interface Props {
  *  - Weight readouts below labels in mono tabular small caps.
  */
 export default function TagRadar({ data, top = 8, size = 400 }: Props) {
+  const label = useTagLabel();
   const items = data.slice(0, top);
   const n = items.length;
   if (n < 3) return null;
@@ -144,7 +147,7 @@ export default function TagRadar({ data, top = 8, size = 400 }: Props) {
                 letterSpacing: "0.01em",
               }}
             >
-              {d.tag}
+              {label(d.tag)}
             </text>
             <text
               x={lp.x}

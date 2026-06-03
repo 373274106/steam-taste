@@ -135,6 +135,7 @@ e:\study\project\
 │   ├── phase4_health_check.py       # tag 同义词 + 邻居人眼判断（生成 meta.json）
 │   ├── phase4plus_train.py          # InfoNCE 训练 dual encoder（PyTorch，离线）
 │   ├── phase4plus_compare.py        # 三路检索消融：TF-IDF / PPMI / trained
+│   ├── build_tag_i18n.py            # 拉 Steam 官方 populartags 两套语言 → data/tag_i18n.json
 │   ├── embedding_probe.py           # Phase 0：transformer 嵌入实验
 │   ├── embedding_compare.py         # Phase 0：6 种方法对比（验证 tag-based 优势）
 │   ├── embedding_diagnose.py        # Phase 0：邻居诊断
@@ -149,6 +150,7 @@ e:\study\project\
     ├── inverted_index.json
     ├── tag_embedding.npy            # Phase 4：437 × 50 PPMI + SVD
     ├── tag_embedding_meta.json      # 配置 + 同义词探针结果
+    ├── tag_i18n.json                # en → zh tag 名字映射（Steam 官方 populartags 翻译）
     ├── game_embedding.npy           # Phase 4+：4985 × 256 trained dual encoder
     ├── game_embedding_meta.json     # 训练超参 + 消融结果（trained -2.1pp vs TF-IDF）
     └── game_embedding_train_log.json
@@ -335,6 +337,10 @@ git push                                   # 自动触发 Vercel + Render 重新
 
 **已 demote：** Render 冷启动修复 —— 后端用付费档，冷启动不严重，不再列 P1。
 
+**自上次同步以来已完成（2 个 commit）：**
+- ✅ Tag i18n（**本轮**）：Steam 官方 populartags 端点的 en + schinese 按 tagid join，396/437 ≈ 90.6% 覆盖，剩下基本是 brand 类（LEGO、Warhammer 40K 等）EN fallback 可接受
+- ✅ 品味金句 22 archetype × 2 变体 × en/zh（commit `327915f`）
+
 **已完成（自上次同步以来 6 个 commit）：**
 - ✅ 品味金句 i18n + archetype 扩到 22 个 × 2 变体（**本轮**）
 - ✅ ErrorState 补 i18n（commit `72b9c91`）
@@ -374,7 +380,8 @@ git push                                   # 自动触发 Vercel + Render 重新
    - 后端 `regret_endpoint(steamid, lang)` → `detect_regret(..., lang)` → `_build_diagnosis(cluster, lang)`
    - 切换语言时 [Result.tsx](frontend/src/pages/Result.tsx) 自动 refetch regret（前端 t() 直接生效，后端 prose 必须 refetch）
    - ✅ ~~ErrorState 未翻译~~ —— 已补，4 类 diagnosis（privacy / notFound / network / unknown）全部 i18n，diagnose() 改返 `kind` 让渲染层切换 body 模板
-   - ✅ ~~品味金句仍是英文~~ —— 本轮补：`_generate_one_sentence(top_tags, steamid, lang)` 走 `HERO_TEMPLATES`，22 archetype × 2 变体 × en/zh，变体按 `steamid % len(variants)` 选；`/api/taste/{steamid}/profile?lang=` 接 lang 参；前端 Result.tsx 切语言时同时 refetch taste + regret
+   - ✅ ~~品味金句仍是英文~~ —— commit `327915f`：`_generate_one_sentence(top_tags, steamid, lang)` 走 `HERO_TEMPLATES`，22 archetype × 2 变体 × en/zh，变体按 `steamid % len(variants)` 选；`/api/taste/{steamid}/profile?lang=` 接 lang 参；前端 Result.tsx 切语言时同时 refetch taste + regret
+   - ✅ ~~tag 名字全英文~~ —— 本轮：`scripts/build_tag_i18n.py` 抓 Steam 官方 populartags 两套语言按 tagid join，落 `data/tag_i18n.json` + 复制到 `frontend/src/locales/`；前端 `useTagLabel()` hook 在 zh 模式下做 lookup，TagRadar / TasteProfileTab（ranked + cluster name + chips）/ RegretTab（pattern title）/ RecommendationsTab（shared_tags）全部接入。Cluster name 改从 `dominant_tags` 前端重组（旧 backend `c.name` 留作 dominant_tags 空时的 fallback）
 
 ### 优先级 4 — 数据 / 算法深化（高工程量、ROI 因目标而异）
 
@@ -422,7 +429,8 @@ git push                                   # 自动触发 Vercel + Render 重新
 
 ### 已修复（按时间倒序）
 
-- ✅ ~~品味金句仅 EN + 模板薄~~ — 本轮，22 archetype × 2 变体 × en/zh，hash(steamid) 选变体
+- ✅ ~~tag 名字全英文~~ — 本轮，Steam 官方 populartags en+schinese 按 tagid join，90.6% 覆盖，useTagLabel hook 渲染期 lookup
+- ✅ ~~品味金句仅 EN + 模板薄~~ — commit `327915f`，22 archetype × 2 变体 × en/zh，hash(steamid) 选变体
 - ✅ ~~ErrorState 未 i18n~~ — commit `72b9c91`，diagnose() 改返 kind，body 在组件里按 kind 切换
 - ✅ ~~Regret 文案重复~~ — commit `eb764d4`
 - ✅ ~~`release_date` 未用于偏置~~ — commit `95a8792`
