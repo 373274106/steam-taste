@@ -38,12 +38,18 @@ def _load_dotenv() -> None:
 _load_dotenv()
 
 
+def _clean_url(name: str, default: str) -> str:
+    """Read a URL env var and strip trailing slash — browser Origin headers
+    never include a trailing slash, so CORS matching breaks if the configured
+    value has one. Normalize defensively here."""
+    return os.environ.get(name, default).rstrip("/")
+
+
 @dataclass(frozen=True)
 class Settings:
     steam_api_key: str = os.environ.get("STEAM_API_KEY", "")
-    # URLs used by the OpenID return-to / frontend-redirect. Override in prod.
-    frontend_base: str = os.environ.get("FRONTEND_BASE", "http://localhost:5173")
-    backend_base: str = os.environ.get("BACKEND_BASE", "http://localhost:8000")
+    frontend_base: str = _clean_url("FRONTEND_BASE", "http://localhost:5173")
+    backend_base: str = _clean_url("BACKEND_BASE", "http://localhost:8000")
 
     def require_steam(self) -> str:
         if not self.steam_api_key:
