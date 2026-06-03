@@ -1,4 +1,5 @@
 import type { TasteProfile } from "../lib/types";
+import TagRadar from "./TagRadar";
 
 interface Props {
   taste: TasteProfile;
@@ -7,12 +8,10 @@ interface Props {
 
 export default function TasteProfileTab({ taste, onSelectTab }: Props) {
   const tags = taste.top_tags.slice(0, 12);
-  const maxWeight = Math.max(...tags.map((t) => t.weight), 0.01);
   const coverage = taste.library_stats.coverage;
 
-  // Split clusters into regret / non-regret for editorial ordering
-  const orderedClusters = [...taste.clusters].sort((a, b) =>
-    b.total_hours - a.total_hours,
+  const orderedClusters = [...taste.clusters].sort(
+    (a, b) => b.total_hours - a.total_hours,
   );
 
   return (
@@ -60,54 +59,63 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
         </div>
       </section>
 
-      {/* ====================  TAG AFFINITY (high-score style)  ==================== */}
+      {/* ====================  TAG AFFINITY (radar + ranking)  ==================== */}
       <section>
-        <div className="flex items-baseline gap-4 mb-6">
+        <div className="flex items-baseline gap-4 mb-7">
           <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-accent)]">
             §01
           </span>
           <h2
-            className="font-display text-2xl sm:text-3xl text-[var(--color-text-hi)]"
-            style={{ fontWeight: 500 }}
+            className="text-xl sm:text-2xl text-[var(--color-text-hi)] tracking-tight"
+            style={{ fontWeight: 600 }}
           >
-            tag affinity, top 12
+            tag affinity
           </h2>
           <div className="h-px flex-1 bg-[var(--color-border)] translate-y-[-0.35em]" />
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-dim)] tabular">
-            weight = playtime × idf
+            playtime-weighted · idf-scaled
           </span>
         </div>
 
-        <ol className="space-y-1">
-          {tags.map((t, i) => {
-            const pct = (t.weight / maxWeight) * 100;
-            return (
-              <li
-                key={t.tag}
-                className="group grid items-baseline gap-4 py-2.5 border-b border-[var(--color-border)]/40 hover:border-[var(--color-accent-soft)] transition-colors"
-                style={{ gridTemplateColumns: "auto 1fr auto auto" }}
-              >
-                <span className="font-mono text-sm text-[var(--color-text-dim)] tabular w-9">
-                  #{String(i + 1).padStart(2, "0")}
-                </span>
-                <span className="text-base sm:text-lg text-[var(--color-text-hi)] truncate">
-                  {t.tag}
-                </span>
-                {/* Pixel bar — block characters give retro feel */}
-                <span
-                  aria-hidden
-                  className="font-mono text-xs sm:text-sm text-[var(--color-accent)] hidden sm:block w-32 sm:w-40 text-right tracking-[-0.05em] overflow-hidden whitespace-nowrap"
-                  style={{ letterSpacing: "0" }}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-8 lg:gap-12 items-center">
+          {/* Radar — top 8 */}
+          <div className="relative">
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-2">
+              top 8 axes
+            </p>
+            <TagRadar data={tags} top={8} />
+          </div>
+
+          {/* Compact ranking — top 12 */}
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-text-dim)] mb-3">
+              top 12 ranked
+            </p>
+            <ol className="grid grid-cols-1 gap-0">
+              {tags.map((t, i) => (
+                <li
+                  key={t.tag}
+                  className="grid items-baseline gap-3 py-1.5 border-b border-[var(--color-border)]/40 last:border-0"
+                  style={{ gridTemplateColumns: "auto 1fr auto" }}
                 >
-                  {"█".repeat(Math.max(1, Math.round(pct / 5)))}
-                </span>
-                <span className="font-mono text-sm text-[var(--color-text-mid)] tabular w-12 text-right">
-                  {t.weight.toFixed(2)}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
+                  <span className="font-mono text-xs text-[var(--color-text-dim)] tabular w-7">
+                    #{String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span
+                    className={`text-sm text-[var(--color-text-hi)] truncate ${
+                      i < 3 ? "text-[var(--color-accent)]" : ""
+                    }`}
+                  >
+                    {t.tag}
+                  </span>
+                  <span className="font-mono text-xs text-[var(--color-text-mid)] tabular w-10 text-right">
+                    {t.weight.toFixed(2)}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
       </section>
 
       {/* ====================  TASTE CLUSTERS (cartridge cards)  ==================== */}
@@ -117,8 +125,8 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
             §02
           </span>
           <h2
-            className="font-display text-2xl sm:text-3xl text-[var(--color-text-hi)]"
-            style={{ fontWeight: 500 }}
+            className="text-xl sm:text-2xl text-[var(--color-text-hi)] tracking-tight"
+            style={{ fontWeight: 600 }}
           >
             your library, clustered
           </h2>
@@ -141,8 +149,8 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
                     profile #{String(i + 1).padStart(2, "0")}
                   </div>
                   <h3
-                    className="font-display text-lg sm:text-xl text-[var(--color-text-hi)] leading-tight"
-                    style={{ fontWeight: 500 }}
+                    className="text-base sm:text-lg text-[var(--color-text-hi)] leading-tight tracking-tight"
+                    style={{ fontWeight: 600 }}
                   >
                     {c.name}
                   </h3>
@@ -232,8 +240,8 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
             </span>
             <div className="min-w-0 flex-1">
               <div
-                className="font-display text-lg text-[var(--color-text-hi)] leading-tight"
-                style={{ fontWeight: 500 }}
+                className="text-base sm:text-lg text-[var(--color-text-hi)] leading-tight"
+                style={{ fontWeight: 600 }}
               >
                 what you'd love next
               </div>
@@ -254,8 +262,8 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
             </span>
             <div className="min-w-0 flex-1">
               <div
-                className="font-display text-lg text-[var(--color-text-hi)] leading-tight"
-                style={{ fontWeight: 500 }}
+                className="text-base sm:text-lg text-[var(--color-text-hi)] leading-tight"
+                style={{ fontWeight: 600 }}
               >
                 quietly outgrown
               </div>

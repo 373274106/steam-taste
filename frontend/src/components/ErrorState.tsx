@@ -179,8 +179,8 @@ export default function ErrorState({ message }: Props) {
                   href={d.cta.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-deep)] text-[var(--color-bg)] font-display tabular transition-colors"
-                  style={{ fontSize: "1rem", fontWeight: 600 }}
+                  className="inline-flex items-center gap-2 px-5 py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-deep)] text-[var(--color-bg)] font-mono uppercase tracking-[0.15em] tabular transition-colors"
+                  style={{ fontSize: "0.875rem", fontWeight: 600 }}
                 >
                   {d.cta.label} <span>↗</span>
                 </a>

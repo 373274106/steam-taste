@@ -179,12 +179,12 @@ export default function Result() {
                     act {a.roman}
                   </div>
                   <div
-                    className={`font-display text-base sm:text-lg ${
+                    className={`text-base sm:text-lg tracking-tight ${
                       isActive
                         ? "text-[var(--color-text-hi)]"
                         : "text-[var(--color-text-mid)]"
                     }`}
-                    style={{ fontWeight: 500 }}
+                    style={{ fontWeight: 600 }}
                   >
                     {a.caption}
                   </div>

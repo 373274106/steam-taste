@@ -57,12 +57,12 @@ export default function RecommendationsTab({ recsNew, recsOwned }: Props) {
                   §{m === "new" ? "01" : "02"}
                 </div>
                 <div
-                  className={`font-display text-base sm:text-lg leading-tight ${
+                  className={`text-base sm:text-lg leading-tight tracking-tight ${
                     active
                       ? "text-[var(--color-text-hi)]"
                       : "text-[var(--color-text-mid)]"
                   }`}
-                  style={{ fontWeight: 500 }}
+                  style={{ fontWeight: 600 }}
                 >
                   {MODE_META[m].label}
                 </div>
@@ -105,8 +105,8 @@ function EmptyState({ mode }: { mode: Mode }) {
         {mode === "owned" ? "clean backlog" : "no matches"}
       </p>
       <p
-        className="font-display text-2xl text-[var(--color-text-hi)] mb-2"
-        style={{ fontWeight: 500 }}
+        className="text-2xl text-[var(--color-text-hi)] mb-2 tracking-tight"
+        style={{ fontWeight: 600 }}
       >
         {mode === "owned"
           ? "your backlog is clean"
@@ -132,14 +132,14 @@ function RecEntry({
 }) {
   return (
     <li className="bg-[var(--color-surface-1)] border border-[var(--color-border)] hover:border-[var(--color-border-strong)] transition-colors group">
-      <div className="grid grid-cols-1 sm:grid-cols-[224px_1fr] gap-0">
-        {/* Cover */}
+      <div className="grid grid-cols-1 sm:grid-cols-[320px_1fr] gap-0">
+        {/* Cover — full Steam header at native 460/215 aspect, no cropping */}
         {card.header_image ? (
           <a
             href={card.steam_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="block overflow-hidden bg-[var(--color-bg)] aspect-[460/215] sm:aspect-auto"
+            className="block overflow-hidden bg-[var(--color-bg)] aspect-[460/215] self-start"
           >
             <img
               src={card.header_image}
@@ -151,7 +151,7 @@ function RecEntry({
             />
           </a>
         ) : (
-          <div className="bg-[var(--color-bg)] aspect-[460/215] sm:aspect-auto" />
+          <div className="bg-[var(--color-bg)] aspect-[460/215] self-start" />
         )}
 
         {/* Body */}
@@ -169,8 +169,8 @@ function RecEntry({
                   )}
               </div>
               <h3
-                className="font-display text-xl sm:text-2xl text-[var(--color-text-hi)] leading-tight"
-                style={{ fontWeight: 500 }}
+                className="text-lg sm:text-xl text-[var(--color-text-hi)] leading-tight tracking-tight"
+                style={{ fontWeight: 600 }}
               >
                 {card.name}
               </h3>

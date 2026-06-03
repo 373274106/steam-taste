@@ -91,12 +91,12 @@ export default function RegretTab({ regret }: { regret: RegretReport }) {
                   </span>
                 </div>
                 <div
-                  className={`font-display text-base sm:text-lg leading-tight ${
+                  className={`text-base sm:text-lg leading-tight tracking-tight ${
                     active
                       ? "text-[var(--color-text-hi)]"
                       : "text-[var(--color-text-mid)]"
                   }`}
-                  style={{ fontWeight: 500 }}
+                  style={{ fontWeight: 600 }}
                 >
                   {KIND_META[k].label}
                 </div>
@@ -177,8 +177,8 @@ function EmptyState({ kind }: { kind: "mixed" | "pure" }) {
         all clear
       </p>
       <p
-        className="font-display text-2xl text-[var(--color-text-hi)] mb-2"
-        style={{ fontWeight: 500 }}
+        className="text-2xl text-[var(--color-text-hi)] mb-2 tracking-tight"
+        style={{ fontWeight: 600 }}
       >
         {kind === "mixed" ? "no duplicates detected" : "no abandoned genres"}
       </p>
@@ -218,8 +218,8 @@ function ClusterList({
                 pattern no. {String(i + 1).padStart(2, "0")}
               </div>
               <h3
-                className="font-display text-xl sm:text-2xl text-[var(--color-text-hi)] leading-tight"
-                style={{ fontWeight: 500 }}
+                className="text-lg sm:text-xl text-[var(--color-text-hi)] leading-tight tracking-tight"
+                style={{ fontWeight: 600 }}
               >
                 {c.dominant_tags.slice(0, 3).join(" / ") || `Cluster ${c.label}`}
               </h3>
@@ -286,8 +286,8 @@ function SleepingGrid({
           clean shelf
         </p>
         <p
-          className="font-display text-2xl text-[var(--color-text-hi)]"
-          style={{ fontWeight: 500 }}
+          className="text-2xl text-[var(--color-text-hi)] tracking-tight"
+          style={{ fontWeight: 600 }}
         >
           no sleeping games
         </p>
