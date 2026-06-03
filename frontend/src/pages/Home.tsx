@@ -10,7 +10,9 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(
-    errorParam === "auth_failed" ? "Steam 登录验证失败，请重试或用 URL 模式" : null,
+    errorParam === "auth_failed"
+      ? "Steam login didn't come back. Try paste mode or the sample below."
+      : null,
   );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -22,91 +24,231 @@ export default function Home() {
       const r = await api.resolveProfile(input.trim());
       navigate(`/result?steamid=${r.steam_id}`);
     } catch (err: any) {
-      setError(err.message || "解析失败");
+      setError(err.message || "Couldn't resolve that profile.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-full flex flex-col items-center justify-center px-6 py-16">
-      <div className="max-w-2xl w-full">
-        <h1 className="text-4xl sm:text-5xl font-bold mb-3 tracking-tight stagger-1">
-          Steam <span className="text-[var(--color-steam-blue)]">Taste</span> Lens
-        </h1>
-        <p className="text-slate-400 text-base sm:text-lg mb-12 stagger-2">
-          看清你自己的游戏品味。揭示 Steam 不愿意告诉你的事。
-        </p>
-
-        {/* Primary: Steam OpenID */}
-        <a
-          href={api.steamLoginUrl()}
-          className="stagger-3 block w-full text-center bg-[var(--color-steam-blue)] hover:bg-blue-500 transition py-3 px-6 rounded-lg text-white font-semibold mb-4"
-        >
-          通过 Steam 登录
-        </a>
-
-        <div className="stagger-4 flex items-center gap-3 my-6 text-slate-500 text-sm">
-          <div className="h-px bg-slate-700 flex-1" />
-          <span>或</span>
-          <div className="h-px bg-slate-700 flex-1" />
+    <main className="min-h-full flex flex-col">
+      {/* Masthead — cartridge-style top bar */}
+      <header className="border-b border-[var(--color-border)]">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-mid)]">
+            <span className="text-[var(--color-accent)] text-sm leading-none">▣</span>
+            <span>playprint <span className="text-[var(--color-text-dim)]">· steam edition</span></span>
+          </div>
+          <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-dim)]">
+            vol.001 · 2026
+          </div>
         </div>
+      </header>
 
-        {/* Secondary: paste URL / SteamID / vanity */}
-        <form onSubmit={handleSubmit} className="stagger-4 mb-4">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="贴 Steam profile URL / SteamID64 / vanity 名"
-            className="w-full bg-slate-900 border border-slate-700 focus:border-slate-500 rounded-lg px-4 py-3 mb-3 outline-none"
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className="w-full bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition py-3 px-6 rounded-lg font-medium"
-          >
-            {loading ? "解析中..." : "分析"}
-          </button>
-        </form>
-
-        {/* Tertiary: demo card */}
-        <button
-          onClick={() => navigate("/result?steamid=-1&demo=1")}
-          className="w-full mt-2 p-4 bg-slate-900/60 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-left transition group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center text-lg flex-shrink-0">
-              🎮
+      {/* Body */}
+      <div className="flex-1 flex flex-col">
+        <div className="w-full max-w-4xl mx-auto px-6 py-12 sm:py-16">
+          {/* Hero */}
+          <section className="anim-fade-up delay-1 mb-14 sm:mb-20">
+            <div className="flex items-baseline justify-between gap-4 mb-6">
+              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--color-accent)] flex items-center gap-3">
+                <span aria-hidden>▰▰</span>
+                <span>a player profile, in three acts</span>
+                <span aria-hidden>▰▰</span>
+              </p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-dim)] tabular hidden sm:block">
+                cat. №&nbsp;pp-01
+              </p>
             </div>
-            <div className="flex-1">
-              <div className="font-medium group-hover:text-white">
-                先试试 Demo 模式
+            <h1
+              className="font-display text-[var(--color-text-hi)] mb-7 flex flex-wrap items-end gap-x-3"
+              style={{
+                fontSize: "clamp(3.25rem, 11vw, 7rem)",
+                lineHeight: 0.9,
+                letterSpacing: "0.01em",
+                fontWeight: 600,
+              }}
+            >
+              <span>
+                PLAY
+                <br />
+                PRINT
+              </span>
+              <span
+                aria-hidden
+                className="text-[var(--color-accent)] anim-blink"
+                style={{ fontSize: "0.7em", lineHeight: 1 }}
+              >
+                ▮
+              </span>
+            </h1>
+            <p className="text-[var(--color-text-mid)] text-lg sm:text-xl leading-relaxed max-w-[58ch]">
+              Read your Steam library the way a friend who actually plays would.
+              Three quiet chapters — what you love, what's been waiting, and the
+              types you've quietly outgrown.
+            </p>
+          </section>
+
+          {/* Divider — bookended ornament */}
+          <div className="anim-fade-up delay-2 flex items-center gap-4 mb-10">
+            <div className="h-px flex-1 bg-[var(--color-border)]" />
+            <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--color-text-mid)] flex items-center gap-3">
+              <span aria-hidden className="text-[var(--color-accent)]">◇</span>
+              <span>choose entry</span>
+              <span aria-hidden className="text-[var(--color-accent)]">◇</span>
+            </span>
+            <div className="h-px flex-1 bg-[var(--color-border)]" />
+          </div>
+
+          {/* Entry options — editorial table-of-contents style */}
+          <section className="space-y-3">
+            {/* 01 — OpenID */}
+            <a
+              href={api.steamLoginUrl()}
+              className="anim-fade-up delay-3 group flex items-center gap-5 sm:gap-7 p-5 sm:p-6 bg-[var(--color-surface-1)] hover:bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent-soft)] transition-colors"
+            >
+              <span className="font-mono text-3xl sm:text-4xl text-[var(--color-text-dim)] group-hover:text-[var(--color-accent)] transition-colors tabular shrink-0 w-12">
+                01
+              </span>
+              <div className="flex-1 min-w-0">
+                <div
+                  className="font-display text-[var(--color-text-hi)] mb-1.5"
+                  style={{ fontSize: "1.625rem", lineHeight: 1.1, fontWeight: 500 }}
+                >
+                  sign in with steam
+                </div>
+                <div className="text-sm text-[var(--color-text-lo)]">
+                  via OpenID — your browser's current Steam session decides who.
+                </div>
               </div>
-              <div className="text-xs text-slate-500">
-                预设玩家库（26 款 · Roguelite + 大策略 + 一些后悔购买），不需要 Steam 账号
+              <span className="font-mono text-xl text-[var(--color-text-dim)] group-hover:text-[var(--color-accent)] group-hover:translate-x-1 transition-all shrink-0">
+                →
+              </span>
+            </a>
+
+            {/* 02 — paste */}
+            <form
+              onSubmit={handleSubmit}
+              className="anim-fade-up delay-4 p-5 sm:p-6 bg-[var(--color-surface-1)] border border-[var(--color-border)] focus-within:border-[var(--color-accent-soft)] transition-colors"
+            >
+              <div className="flex items-start gap-5 sm:gap-7">
+                <span className="font-mono text-3xl sm:text-4xl text-[var(--color-text-dim)] tabular shrink-0 w-12 pt-0.5">
+                  02
+                </span>
+                <div className="flex-1 min-w-0">
+                  <label
+                    htmlFor="sid"
+                    className="font-display text-[var(--color-text-hi)] block mb-1.5"
+                    style={{ fontSize: "1.625rem", lineHeight: 1.1, fontWeight: 500 }}
+                  >
+                    enter a steam id
+                  </label>
+                  <div className="text-sm text-[var(--color-text-lo)] mb-4">
+                    profile URL, SteamID64, or vanity name — must be public.
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      id="sid"
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder="steamcommunity.com/id/..."
+                      className="flex-1 bg-[var(--color-bg)] border border-[var(--color-border)] focus:border-[var(--color-accent)] px-4 py-3 text-sm text-[var(--color-text-hi)] placeholder:text-[var(--color-text-dim)] outline-none font-mono"
+                      disabled={loading}
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading || !input.trim()}
+                      className="px-6 py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-deep)] disabled:bg-[var(--color-surface-2)] disabled:text-[var(--color-text-dim)] disabled:cursor-not-allowed text-[var(--color-bg)] font-display tabular transition-colors shrink-0"
+                      style={{ fontSize: "1.125rem", fontWeight: 600 }}
+                    >
+                      {loading ? "..." : "go ▸"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            {/* 03 — demo */}
+            <button
+              onClick={() => navigate("/result?steamid=-1&demo=1")}
+              className="anim-fade-up delay-5 group w-full flex items-center gap-5 sm:gap-7 p-5 sm:p-6 bg-[var(--color-surface-1)] hover:bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent-soft)] transition-colors text-left"
+            >
+              <span className="font-mono text-3xl sm:text-4xl text-[var(--color-text-dim)] group-hover:text-[var(--color-accent)] transition-colors tabular shrink-0 w-12">
+                03
+              </span>
+              <div className="flex-1 min-w-0">
+                <div
+                  className="font-display text-[var(--color-text-hi)] mb-1.5"
+                  style={{ fontSize: "1.625rem", lineHeight: 1.1, fontWeight: 500 }}
+                >
+                  try a sample player
+                </div>
+                <div className="text-sm text-[var(--color-text-lo)]">
+                  26 games · roguelite-leaning · a few buyer's-remorse picks · no
+                  Steam account needed.
+                </div>
+              </div>
+              <span className="font-mono text-xl text-[var(--color-text-dim)] group-hover:text-[var(--color-accent)] group-hover:translate-x-1 transition-all shrink-0">
+                →
+              </span>
+            </button>
+          </section>
+
+          {/* Error */}
+          {error && (
+            <div
+              role="alert"
+              className="anim-fade-up mt-5 p-4 bg-[var(--color-danger-bg)] border border-[var(--color-danger)] font-mono text-sm text-[var(--color-text-hi)] flex gap-3"
+            >
+              <span className="text-[var(--color-coral)] shrink-0">⚠</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Masthead footer */}
+          <footer className="anim-fade-up delay-6 mt-24 pt-8 border-t border-[var(--color-border)]">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-7">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-3">
+                  privacy
+                </div>
+                <div className="text-sm text-[var(--color-text-lo)] leading-relaxed">
+                  Profile and game details must be public. Libraries are fetched
+                  live per request, never stored.
+                </div>
+              </div>
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-3">
+                  how it works
+                </div>
+                <div className="text-sm text-[var(--color-text-lo)] leading-relaxed">
+                  TF-IDF tag similarity layered with a self-trained 50-d PPMI
+                  embedding and HDBSCAN clustering. All numpy, no LLM.
+                </div>
+              </div>
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-3">
+                  colophon
+                </div>
+                <div className="text-sm text-[var(--color-text-lo)] leading-relaxed">
+                  Set in Pixelify Sans and Hanken Grotesk.{" "}
+                  <a
+                    href="https://github.com/373274106/steam-taste"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--color-text-mid)] hover:text-[var(--color-accent)] underline underline-offset-2 decoration-[var(--color-border-strong)] hover:decoration-[var(--color-accent)] transition-colors"
+                  >
+                    Source on GitHub ↗
+                  </a>
+                </div>
               </div>
             </div>
-            <span className="text-slate-500 group-hover:text-slate-300 transition">→</span>
-          </div>
-        </button>
-
-        {error && (
-          <div className="mt-6 p-4 bg-red-950/50 border border-red-900 rounded-lg text-red-300 text-sm">
-            {error}
-          </div>
-        )}
-
-        <div className="mt-16 text-xs text-slate-500 leading-relaxed">
-          <p className="mb-2">隐私提示：</p>
-          <ul className="list-disc list-inside space-y-1">
-            <li>需要你的 Steam profile + game details 设为 Public</li>
-            <li>我们不存储你的库数据，每次现场拉取</li>
-            <li>Steam API key 只在后端，不会出现在前端代码</li>
-          </ul>
+          </footer>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

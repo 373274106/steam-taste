@@ -35,6 +35,9 @@ scripts/probe_results.csv
 scripts/diagnose_output.txt
 scripts/real_user_output*.txt
 
+# Visual review screenshots (regenerated from screenshot_*.py scripts)
+screenshots/
+
 # Frontend
 frontend/node_modules/
 frontend/dist/
