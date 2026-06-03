@@ -1,0 +1,145 @@
+{
+  "dim": 50,
+  "vocab_size": 437,
+  "ppmi_shift": 1.0,
+  "n_games_contributing": 4987,
+  "cooc_fill_pct": 47.77,
+  "probe_results": [
+    {
+      "tag": "Rogue-like",
+      "top": [
+        [
+          "Rogue-lite",
+          0.9552777409553528
+        ],
+        [
+          "Action Roguelike",
+          0.845421552658081
+        ],
+        [
+          "Perma Death",
+          0.8295237421989441
+        ]
+      ]
+    },
+    {
+      "tag": "Rogue-lite",
+      "top": [
+        [
+          "Rogue-like",
+          0.9552777409553528
+        ],
+        [
+          "Action Roguelike",
+          0.869890034198761
+        ],
+        [
+          "Perma Death",
+          0.8035079836845398
+        ]
+      ]
+    },
+    {
+      "tag": "Souls-like",
+      "top": [
+        [
+          "Action RPG",
+          0.696619987487793
+        ],
+        [
+          "Hack and Slash",
+          0.6616677641868591
+        ],
+        [
+          "Dark Fantasy",
+          0.6543167233467102
+        ]
+      ]
+    },
+    {
+      "tag": "Difficult",
+      "top": [
+        [
+          "Indie",
+          0.6177034378051758
+        ],
+        [
+          "Fast-Paced",
+          0.5884991884231567
+        ],
+        [
+          "Addictive",
+          0.5758262872695923
+        ]
+      ]
+    },
+    {
+      "tag": "Cozy",
+      "top": [
+        [
+          "Wholesome",
+          0.8767259120941162
+        ],
+        [
+          "Creature Collector",
+          0.6905141472816467
+        ],
+        [
+          "Collectathon",
+          0.6314393281936646
+        ]
+      ]
+    },
+    {
+      "tag": "Relaxing",
+      "top": [
+        [
+          "Nature",
+          0.6599690914154053
+        ],
+        [
+          "Casual",
+          0.649603545665741
+        ],
+        [
+          "Colorful",
+          0.5970112681388855
+        ]
+      ]
+    },
+    {
+      "tag": "Deckbuilding",
+      "top": [
+        [
+          "Card Battler",
+          0.95604008436203
+        ],
+        [
+          "Card Game",
+          0.9383905529975891
+        ],
+        [
+          "Roguelike Deckbuilder",
+          0.9132415652275085
+        ]
+      ]
+    },
+    {
+      "tag": "Card Game",
+      "top": [
+        [
+          "Deckbuilding",
+          0.9383905529975891
+        ],
+        [
+          "Card Battler",
+          0.9371801614761353
+        ],
+        [
+          "Roguelike Deckbuilder",
+          0.8086217641830444
+        ]
+      ]
+    }
+  ]
+}

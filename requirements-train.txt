@@ -1,0 +1,11 @@
+# Offline training dependencies (Phase 4+).
+# NOT installed in production — see requirements.txt for runtime deps.
+#
+# Install locally only when retraining the game embedding:
+#   pip install -r requirements-train.txt
+#
+# Trained weights are exported to data/game_embedding.npy and loaded
+# by the runtime engine using numpy alone (no torch in production).
+
+torch>=2.0,<3
+tqdm>=4.65

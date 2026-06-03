@@ -32,6 +32,8 @@ DB_PATH = DATA_DIR / "corpus.db"
 TFIDF_PATH = DATA_DIR / "tfidf.npz"
 APPID_PATH = DATA_DIR / "appid_order.json"
 VOCAB_PATH = DATA_DIR / "tag_vocab.json"
+TAG_EMBED_PATH = DATA_DIR / "tag_embedding.npy"
+GAME_EMBED_PATH = DATA_DIR / "game_embedding.npy"
 
 
 # ============================================================
@@ -66,13 +68,29 @@ class TasteEngine:
                  db_path: Path = DB_PATH,
                  tfidf_path: Path = TFIDF_PATH,
                  appid_path: Path = APPID_PATH,
-                 vocab_path: Path = VOCAB_PATH):
+                 vocab_path: Path = VOCAB_PATH,
+                 tag_embed_path: Path = TAG_EMBED_PATH,
+                 game_embed_path: Path = GAME_EMBED_PATH):
         self.db_path = db_path
         self.tfidf: sparse.csr_matrix = sparse.load_npz(tfidf_path)
         self.appid_order: list[int] = json.loads(appid_path.read_text(encoding="utf-8"))
         self.appid_to_row: dict[int, int] = {a: i for i, a in enumerate(self.appid_order)}
         self.vocab: list[str] = json.loads(vocab_path.read_text(encoding="utf-8"))
         self.tag_to_col: dict[str, int] = {t: i for i, t in enumerate(self.vocab)}
+        # Phase 4: self-trained tag co-occurrence embedding (PPMI + SVD).
+        # Optional — engine still works if the npy file is missing.
+        if tag_embed_path.exists():
+            self.tag_embedding: np.ndarray | None = np.load(tag_embed_path).astype(np.float32)
+        else:
+            self.tag_embedding = None
+        # Phase 4+: trained dual-encoder game embedding (InfoNCE).
+        # Also optional; missing file leaves the field as None.
+        if game_embed_path.exists():
+            self.game_embedding: np.ndarray | None = np.load(game_embed_path).astype(np.float32)
+        else:
+            self.game_embedding = None
+        # PPMI-based dense game embedding (lazily computed from tfidf @ tag_embedding).
+        self._ppmi_game_embedding: np.ndarray | None = None
         # Lazy-loaded metadata cache: appid -> (name, header_image, owners_low)
         self._meta_cache: dict[int, tuple[str, str, int]] = {}
 
@@ -372,6 +390,106 @@ class TasteEngine:
                 name = self._meta_cache.get(appid, ("?",))[0]
                 evidence.append((appid, name, playtime_lookup.get(appid, 0)))
         return shared, evidence
+
+    # ------------------------------------------------------------
+    # Phase 4: Tag co-occurrence embedding (PPMI + SVD, self-trained)
+    # ------------------------------------------------------------
+
+    @property
+    def has_tag_embedding(self) -> bool:
+        return self.tag_embedding is not None
+
+    def tag_neighbors(self, tag: str, k: int = 8) -> list[tuple[str, float]]:
+        """Semantic neighbors of a tag in the self-trained embedding space.
+
+        Returns [(tag, cosine_sim), ...] sorted descending.
+        Empty if the tag is missing from vocab or embedding isn't loaded.
+        """
+        if self.tag_embedding is None:
+            return []
+        col = self.tag_to_col.get(tag)
+        if col is None:
+            return []
+        sims = self.tag_embedding @ self.tag_embedding[col]
+        sims[col] = -1.0
+        top = np.argsort(sims)[-k:][::-1]
+        return [(self.vocab[i], float(sims[i])) for i in top if sims[i] > 0]
+
+    def game_dense_vec(self, appid: int) -> np.ndarray | None:
+        """Project a game into the dense PPMI tag-embedding space.
+
+        Result = TF-IDF-weighted sum of tag embeddings, L2-normalized.
+        Returns None if the game is not in corpus or embedding unavailable.
+        """
+        if self.tag_embedding is None:
+            return None
+        row = self._row(appid)
+        if row is None:
+            return None
+        dense = np.asarray(row @ self.tag_embedding).flatten().astype(np.float32)
+        n = float(np.linalg.norm(dense))
+        if n > 0:
+            dense /= n
+        return dense
+
+    # ------------------------------------------------------------
+    # Phase 4+: Trained dual-encoder embedding (InfoNCE) for retrieval
+    # ------------------------------------------------------------
+
+    @property
+    def has_game_embedding(self) -> bool:
+        return self.game_embedding is not None
+
+    def _ppmi_games(self) -> np.ndarray | None:
+        """All-corpus PPMI game embedding, cached."""
+        if self.tag_embedding is None:
+            return None
+        if self._ppmi_game_embedding is None:
+            dense = np.asarray(self.tfidf @ self.tag_embedding).astype(np.float32)
+            norms = np.linalg.norm(dense, axis=1, keepdims=True)
+            norms[norms == 0] = 1.0
+            self._ppmi_game_embedding = (dense / norms).astype(np.float32)
+        return self._ppmi_game_embedding
+
+    def similar_games(
+        self,
+        appid: int,
+        k: int = 10,
+        method: str = "ppmi",
+        exclude: set[int] | None = None,
+    ) -> list[tuple[int, float]]:
+        """Game-game retrieval via the chosen embedding.
+
+        method:
+          - "tfidf": sparse TF-IDF cosine (baseline, 437 dim)
+          - "ppmi":  PPMI tag embedding projection (50 dim, +2.4pp on probe)
+          - "trained": trained dual encoder (256 dim, baseline parity)
+        """
+        if method == "tfidf":
+            return self.similar_to_game(appid, k=k, exclude=exclude)
+
+        if method == "ppmi":
+            corpus_emb = self._ppmi_games()
+            target = self.game_dense_vec(appid)
+        elif method == "trained":
+            corpus_emb = self.game_embedding
+            row = self.appid_to_row.get(appid)
+            target = corpus_emb[row] if (corpus_emb is not None and row is not None) else None
+        else:
+            raise ValueError(f"Unknown method: {method!r}")
+
+        if corpus_emb is None or target is None:
+            return []
+
+        sims = corpus_emb @ target
+        target_row = self.appid_to_row[appid]
+        sims[target_row] = -1.0
+        for x in exclude or ():
+            r = self.appid_to_row.get(x)
+            if r is not None:
+                sims[r] = -1.0
+        top = np.argsort(sims)[-k:][::-1]
+        return [(self.appid_order[i], float(sims[i])) for i in top]
 
 
 # ============================================================

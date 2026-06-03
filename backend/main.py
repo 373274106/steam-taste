@@ -453,6 +453,66 @@ def regret_endpoint(steamid: int):
 
 
 # ============================================================
+# Algorithm introspection (Phase 4)
+# ============================================================
+
+@app.get("/api/algo/tag_neighbors")
+def tag_neighbors(tag: str, k: int = 8):
+    """Semantic neighbors of a tag from the self-trained co-occurrence embedding.
+
+    Demo endpoint to showcase the Phase 4 layer: shows that "Rogue-like" ~
+    "Rogue-lite", "Cozy" ~ "Wholesome", etc. — without any pretrained model.
+    """
+    eng = get_engine()
+    if not eng.has_tag_embedding:
+        raise HTTPException(503, "Tag embedding not loaded on this deployment")
+    nbs = eng.tag_neighbors(tag, k=k)
+    if not nbs and tag not in eng.tag_to_col:
+        raise HTTPException(404, f"Tag {tag!r} not in vocabulary")
+    return {
+        "tag": tag,
+        "neighbors": [{"tag": t, "sim": round(s, 3)} for t, s in nbs],
+    }
+
+
+@app.get("/api/algo/game_neighbors")
+def game_neighbors(appid: int, method: str = "ppmi", k: int = 8):
+    """Game-game retrieval through one of three embeddings.
+
+    method:
+      tfidf   — sparse TF-IDF cosine baseline (437 dim)
+      ppmi    — PPMI tag embedding projection (50 dim, +2.4pp on probe)
+      trained — InfoNCE-trained dual encoder (256 dim, baseline parity)
+
+    Demo endpoint that exposes the Phase 4 / Phase 4+ ablation live.
+    """
+    eng = get_engine()
+    if method not in ("tfidf", "ppmi", "trained"):
+        raise HTTPException(400, f"Unknown method: {method!r}")
+    if method == "ppmi" and not eng.has_tag_embedding:
+        raise HTTPException(503, "PPMI embedding not loaded")
+    if method == "trained" and not eng.has_game_embedding:
+        raise HTTPException(503, "Trained encoder embedding not loaded")
+    if appid not in eng.appid_to_row:
+        raise HTTPException(404, f"appid {appid} not in corpus")
+
+    pairs = eng.similar_games(appid, k=k, method=method)
+    return {
+        "appid": appid,
+        "name": eng.name_of(appid),
+        "method": method,
+        "neighbors": [
+            {
+                "appid": a,
+                "name": eng.name_of(a),
+                "sim": round(s, 3),
+            }
+            for a, s in pairs
+        ],
+    }
+
+
+# ============================================================
 # Game metadata
 # ============================================================
 

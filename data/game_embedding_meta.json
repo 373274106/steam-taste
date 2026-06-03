@@ -1,0 +1,39 @@
+{
+  "model": {
+    "input_dim": 437,
+    "hidden": 512,
+    "output_dim": 256,
+    "dropout": 0.2
+  },
+  "training": {
+    "loss": "InfoNCE (symmetric, in-batch negatives)",
+    "temperature": 0.15,
+    "optimizer": "Adam",
+    "lr": 0.0005,
+    "weight_decay": 0.0001,
+    "batch_size": 256,
+    "epochs_run": 9,
+    "best_epoch": 1,
+    "early_stop_metric": "probe_merged",
+    "best_score": 81.06666666666666,
+    "patience": 8
+  },
+  "data": {
+    "corpus_games": 4985,
+    "vocab_size": 437,
+    "positive_pairs_total": 106600,
+    "train_pairs": 95940,
+    "val_pairs": 10660,
+    "min_shared_high_idf_tags": 2,
+    "high_idf_quantile": 0.75,
+    "probe_excluded": 84
+  },
+  "eval_probe_top5": {
+    "baseline_tfidf_strict_pct": 77.60000000000001,
+    "baseline_tfidf_merged_pct": 83.2,
+    "trained_strict_pct": 76.53333333333333,
+    "trained_merged_pct": 81.06666666666666,
+    "delta_strict_pp": -1.066666666666677,
+    "delta_merged_pp": -2.13333333333334
+  }
+}
