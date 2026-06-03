@@ -67,16 +67,16 @@ function ModeButton({ active, onClick, children }: { active: boolean; onClick: (
 
 function RecCardView({ card, mode }: { card: RecCard; mode: Mode }) {
   return (
-    <div className="flex gap-4 bg-[var(--color-steam-panel)] border border-slate-800 rounded-lg overflow-hidden hover:border-slate-700 transition">
+    <div className="flex flex-col sm:flex-row gap-4 bg-[var(--color-steam-panel)] border border-slate-800 rounded-lg overflow-hidden hover:border-slate-700 transition">
       {card.header_image ? (
         <img
           src={card.header_image}
           alt={card.name}
-          className="w-48 h-auto object-cover bg-slate-900 flex-shrink-0"
+          className="w-full sm:w-48 aspect-[460/215] sm:aspect-auto object-cover bg-slate-900 flex-shrink-0"
           onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
         />
       ) : (
-        <div className="w-48 bg-slate-900 flex-shrink-0" />
+        <div className="w-full sm:w-48 aspect-[460/215] sm:aspect-auto bg-slate-900 flex-shrink-0" />
       )}
 
       <div className="flex-1 p-4 min-w-0">

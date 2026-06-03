@@ -6,6 +6,7 @@ import TasteProfileTab from "../components/TasteProfileTab";
 import RecommendationsTab from "../components/RecommendationsTab";
 import RegretTab from "../components/RegretTab";
 import LoadingState from "../components/LoadingState";
+import ErrorState from "../components/ErrorState";
 
 type Tab = "taste" | "recs" | "regret";
 
@@ -79,17 +80,7 @@ export default function Result() {
   }
 
   if (error) {
-    return (
-      <div className="min-h-full flex items-center justify-center px-6">
-        <div className="max-w-xl w-full bg-red-950/40 border border-red-900 rounded-lg p-6">
-          <h2 className="text-xl font-bold text-red-300 mb-2">出错了</h2>
-          <pre className="text-sm text-red-200 whitespace-pre-wrap">{error}</pre>
-          <Link to="/" className="text-blue-400 mt-4 inline-block">
-            ← 返回主页
-          </Link>
-        </div>
-      </div>
-    );
+    return <ErrorState message={error} />;
   }
 
   if (!summary || !taste) return null;
@@ -98,12 +89,12 @@ export default function Result() {
     <div className="min-h-full">
       {/* Top bar */}
       <div className="sticky top-0 z-10 bg-slate-950/90 backdrop-blur border-b border-slate-800">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-4">
           {summary.avatar_url && (
             <img
               src={summary.avatar_url}
               alt=""
-              className="w-10 h-10 rounded-lg"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex-shrink-0"
             />
           )}
           <div className="flex-1 min-w-0">
@@ -115,11 +106,11 @@ export default function Result() {
               {isDemo && <span className="ml-2 text-blue-400">DEMO</span>}
             </div>
           </div>
-          <Link to="/" className="text-sm text-slate-400 hover:text-slate-200">
+          <Link to="/" className="text-sm text-slate-400 hover:text-slate-200 flex-shrink-0">
             换一个 →
           </Link>
         </div>
-        <div className="max-w-6xl mx-auto px-6 flex gap-2 -mb-px">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex gap-2 -mb-px overflow-x-auto scrollbar-thin">
           {([
             ["taste", "📊 Taste"],
             ["recs", "💎 Recommendations"],
@@ -128,7 +119,7 @@ export default function Result() {
             <button
               key={k}
               onClick={() => setTab(k)}
-              className={`px-4 py-2 text-sm border-b-2 transition ${
+              className={`px-3 sm:px-4 py-2 text-sm border-b-2 transition whitespace-nowrap ${
                 tab === k
                   ? "border-[var(--color-steam-blue)] text-white"
                   : "border-transparent text-slate-400 hover:text-slate-200"
@@ -140,8 +131,8 @@ export default function Result() {
         </div>
       </div>
 
-      {/* Tab content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      {/* Tab content — key on tab so React unmounts/remounts → fresh fade-in */}
+      <div key={tab} className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 fade-in">
         {tab === "taste" && <TasteProfileTab taste={taste} onSelectTab={setTab} />}
         {tab === "recs" && (
           <RecommendationsTab recsNew={recsBest!} recsOwned={recsOwned!} />
