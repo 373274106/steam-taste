@@ -63,7 +63,7 @@ export default function Result() {
         setSummary(s);
         setStep("taste");
 
-        const t = await api.tasteProfile(steamid);
+        const t = await api.tasteProfile(steamid, lang);
         if (cancelled) return;
         setTaste(t);
         setStep("recs");
@@ -120,20 +120,31 @@ export default function Result() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [discoverMode]);
 
-  // Refetch the regret report when the user switches UI language — the
-  // diagnosis text is rendered server-side, so a frontend swap alone would
-  // leave the regret prose in the old language.
+  // Refetch server-rendered prose when the user switches UI language. Both
+  // the taste hero quote and the regret diagnoses are templated server-side.
   useEffect(() => {
-    if (regret === null) return;
+    if (taste === null && regret === null) return;
     let cancelled = false;
-    api
-      .regret(steamid, lang)
-      .then((r) => {
-        if (!cancelled) setRegret(r);
-      })
-      .catch(() => {
-        // Silent: keep existing regret visible if the refetch fails.
-      });
+    if (taste !== null) {
+      api
+        .tasteProfile(steamid, lang)
+        .then((t) => {
+          if (!cancelled) setTaste(t);
+        })
+        .catch(() => {
+          // Silent: keep existing taste visible if the refetch fails.
+        });
+    }
+    if (regret !== null) {
+      api
+        .regret(steamid, lang)
+        .then((r) => {
+          if (!cancelled) setRegret(r);
+        })
+        .catch(() => {
+          // Silent: keep existing regret visible if the refetch fails.
+        });
+    }
     return () => {
       cancelled = true;
     };

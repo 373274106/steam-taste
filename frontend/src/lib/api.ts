@@ -39,8 +39,8 @@ export const api = {
   profileSummary: (steamid: number | string) =>
     get<ProfileSummary>(`/api/profile/${steamid}/summary`),
 
-  tasteProfile: (steamid: number | string) =>
-    get<TasteProfile>(`/api/taste/${steamid}/profile`),
+  tasteProfile: (steamid: number | string, lang: string = "zh") =>
+    get<TasteProfile>(`/api/taste/${steamid}/profile?lang=${encodeURIComponent(lang)}`),
 
   recommendNew: (steamid: number | string, mode = "best_fit", k = 10) =>
     get<RecommendResponse>(`/api/taste/${steamid}/recommend/new?mode=${mode}&k=${k}`),

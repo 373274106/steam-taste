@@ -335,8 +335,9 @@ git push                                   # 自动触发 Vercel + Render 重新
 
 **已 demote：** Render 冷启动修复 —— 后端用付费档，冷启动不严重，不再列 P1。
 
-**已完成（自上次同步以来 5 个 commit）：**
-- ✅ ErrorState 补 i18n（**本轮**）
+**已完成（自上次同步以来 6 个 commit）：**
+- ✅ 品味金句 i18n + archetype 扩到 22 个 × 2 变体（**本轮**）
+- ✅ ErrorState 补 i18n（commit `72b9c91`）
 - ✅ Regret 文案多样化（commit `eb764d4`）
 - ✅ release_year 偏置 + fresh_fit mode（commit `95a8792`）
 - ✅ 中英双语 i18n（commit `8eb11ee`）
@@ -373,6 +374,7 @@ git push                                   # 自动触发 Vercel + Render 重新
    - 后端 `regret_endpoint(steamid, lang)` → `detect_regret(..., lang)` → `_build_diagnosis(cluster, lang)`
    - 切换语言时 [Result.tsx](frontend/src/pages/Result.tsx) 自动 refetch regret（前端 t() 直接生效，后端 prose 必须 refetch）
    - ✅ ~~ErrorState 未翻译~~ —— 已补，4 类 diagnosis（privacy / notFound / network / unknown）全部 i18n，diagnose() 改返 `kind` 让渲染层切换 body 模板
+   - ✅ ~~品味金句仍是英文~~ —— 本轮补：`_generate_one_sentence(top_tags, steamid, lang)` 走 `HERO_TEMPLATES`，22 archetype × 2 变体 × en/zh，变体按 `steamid % len(variants)` 选；`/api/taste/{steamid}/profile?lang=` 接 lang 参；前端 Result.tsx 切语言时同时 refetch taste + regret
 
 ### 优先级 4 — 数据 / 算法深化（高工程量、ROI 因目标而异）
 
@@ -414,12 +416,14 @@ git push                                   # 自动触发 Vercel + Render 重新
 - ℹ️ **评价数据已经在用**：`recommend()` 有 `min_reviews=50` + `min_quality=0.65` 硬过滤 + `(0.85 + 0.30*quality)` 软加成（[taste_engine.py:_ensure_extended_meta()](backend/taste_engine.py)）。新对话别再以为没接入评价。
 - ℹ️ **`explain()` 签名是 3 元组**（`shared_tags`, `evidence`, `closest_match`），不是 2 元组。目前只有 [main.py:_build_rec_card](backend/main.py) 和 [taste_engine.py:format_recommendations](backend/taste_engine.py) 调用，都已更新。
 - ℹ️ **新 API 契约（i18n / fresh_fit 引入）**：
+  - `GET /api/taste/{steamid}/profile?lang=zh|en` —— `lang` 默认 zh，未知值退回 zh
   - `GET /api/taste/{steamid}/regret?lang=zh|en` —— `lang` 默认 zh，未知值退回 zh（不报错）
   - `GET /api/taste/{steamid}/recommend/new?mode=...` —— `mode` 合法值 `best_fit | hidden_gem | stretch | fresh_fit`（fresh_fit 是新加的）
 
 ### 已修复（按时间倒序）
 
-- ✅ ~~ErrorState 未 i18n~~ — 本轮，diagnose() 改返 kind，body 在组件里按 kind 切换
+- ✅ ~~品味金句仅 EN + 模板薄~~ — 本轮，22 archetype × 2 变体 × en/zh，hash(steamid) 选变体
+- ✅ ~~ErrorState 未 i18n~~ — commit `72b9c91`，diagnose() 改返 kind，body 在组件里按 kind 切换
 - ✅ ~~Regret 文案重复~~ — commit `eb764d4`
 - ✅ ~~`release_date` 未用于偏置~~ — commit `95a8792`
 - ✅ ~~高时长宽 tag 游戏霸占归因~~ — closed-form decomposition + closest_match，commit `246bab9`

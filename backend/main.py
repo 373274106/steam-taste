@@ -210,46 +210,295 @@ def demo_profile():
 # Taste profile
 # ============================================================
 
-def _generate_one_sentence(top_tags: list[tuple[str, float]]) -> str:
-    """Cheeky one-liner characterizing the player based on top tag mix."""
-    if not top_tags:
-        return "Your library is too small to characterize."
-    tags = [t for t, _ in top_tags[:6]]
-    s = set(tags)
+HERO_TEMPLATES: dict[str, dict[str, list[str]]] = {
+    "souls": {
+        "en": [
+            "A glutton for punishment — every bonfire was earned",
+            "Lives for the thirty-seventh attempt: the one where the boss finally falls",
+        ],
+        "zh": [
+            "受苦专业户——每一处篝火都是用命换来的",
+            "活在第三十七次尝试的那一击里",
+        ],
+    },
+    "jrpg": {
+        "en": [
+            "JRPG completionist — turn-based combat is meditation",
+            "Plays the seventy-hour ones for the side stories",
+        ],
+        "zh": [
+            "JRPG 完美主义者——回合制战斗是冥想",
+            "通关 70 小时的故事，只为支线",
+        ],
+    },
+    "vn": {
+        "en": [
+            "Reads more than they fight — visual novels carry the library",
+            "Here for the route splits, not the combat",
+        ],
+        "zh": [
+            "读的比打的多——视觉小说撑起了游戏库",
+            "为剧情分支而留，不为战斗",
+        ],
+    },
+    "rpg_mp": {
+        "en": [
+            "Multi-genre player: deep singleplayer RPGs by night, competitive multiplayer by day",
+            "Two lives — solo RPGs after dark, ranked matches in daylight",
+        ],
+        "zh": [
+            "多面玩家：白天竞技多人，夜里沉浸单人 RPG",
+            "切换自如：日间联机刚枪，夜晚独自吃书",
+        ],
+    },
+    "rpg_narrative": {
+        "en": [
+            "Narrative-driven RPG explorer — every NPC has a backstory worth hearing",
+            "Reads every codex entry, picks every dialogue option",
+        ],
+        "zh": [
+            "叙事驱动型 RPG 探索者——每个 NPC 的来历都值得听完",
+            "看完每条 codex，选完每段对话",
+        ],
+    },
+    "strategy_rogue": {
+        "en": [
+            "Strategist by trade, roguelite obsessive on the side",
+            "Plans ten turns ahead all week, takes a daily run with morning coffee",
+        ],
+        "zh": [
+            "本职战略家，副业 roguelite 沉迷者",
+            "工作日预判十回合，早晨咖啡配 daily run",
+        ],
+    },
+    "horror_mp": {
+        "en": [
+            "Co-op horror enthusiast — fear shared is fear doubled",
+            "Brings friends along to scream at the same monster",
+        ],
+        "zh": [
+            "联机恐怖爱好者——分享恐惧反而更可怕",
+            "拉朋友一起对着同一只怪物尖叫",
+        ],
+    },
+    "horror_solo": {
+        "en": [
+            "Solo horror fan — headphones on, lights off, no one to share the dread with",
+            "Walks into the basement alone every single time",
+        ],
+        "zh": [
+            "单人恐怖玩家——耳机戴上，灯关掉，恐惧自己消化",
+            "每次都一个人走进地下室",
+        ],
+    },
+    "automation": {
+        "en": [
+            "Factorio brain — optimizes the factory until the factory disappears",
+            "Builds the system that builds itself",
+        ],
+        "zh": [
+            "Factorio 脑回路——把工厂优化到工厂消失",
+            "构建那个能自我构建的系统",
+        ],
+    },
+    "sandbox": {
+        "en": [
+            "Sandbox builder — would rather lay foundations than complete objectives",
+            "Three hours into a new save, still hasn't fought anything",
+        ],
+        "zh": [
+            "沙盒建造者——比起通关，更喜欢打地基",
+            "新存档玩了三小时，还没开过战",
+        ],
+    },
+    "deckbuilder": {
+        "en": [
+            "Deckbuilder specialist — synergy is the only language that matters",
+            "Has opinions on every card pool in every roguelike",
+        ],
+        "zh": [
+            "构筑式专家——只关心 synergy 这一种语言",
+            "对每个 roguelike 的牌池都有看法",
+        ],
+    },
+    "shooter_competitive": {
+        "en": [
+            "Competitive shooter — ranked is the only ladder worth climbing",
+            "Spends warm-up longer than most people's matches",
+        ],
+        "zh": [
+            "竞技射击玩家——只有 ranked 这把梯子值得爬",
+            "热身时间比别人一整局都长",
+        ],
+    },
+    "shooter": {
+        "en": [
+            "Shooter fan — gunfeel is half the game",
+            "Cares about recoil patterns more than the campaign",
+        ],
+        "zh": [
+            "射击爱好者——枪感占游戏的一半",
+            "对后坐力曲线的关注度高过剧情",
+        ],
+    },
+    "cozy": {
+        "en": [
+            "Cozy-leaning player — comfort over challenge",
+            "Plays for the rhythm, not the boss bar",
+        ],
+        "zh": [
+            "偏 cozy 玩家——舒适大于挑战",
+            "玩的是节奏，不是 boss 血条",
+        ],
+    },
+    "sim": {
+        "en": [
+            "Simulation player — finds peace in spreadsheets disguised as games",
+            "Plays the kind of game that lasts seasons",
+        ],
+        "zh": [
+            "模拟玩家——表格披着游戏皮也能让人安心",
+            "玩的是以季节为单位的游戏",
+        ],
+    },
+    "rogue": {
+        "en": [
+            "Roguelite obsessive — the run never ends",
+            "Lives for the seed where everything clicks",
+        ],
+        "zh": [
+            "Roguelite 沉迷者——这一局永远没有尽头",
+            "活在那把所有词条都对上的种子里",
+        ],
+    },
+    "strategy": {
+        "en": [
+            "Grand strategist — empires take time",
+            "Pauses mid-turn to read every tooltip",
+        ],
+        "zh": [
+            "大战略玩家——帝国是用时间堆出来的",
+            "回合内会暂停看完每一条 tooltip",
+        ],
+    },
+    "mp": {
+        "en": [
+            "Multiplayer-first — single-player feels too quiet",
+            "Games are an excuse to be in voice with someone",
+        ],
+        "zh": [
+            "多人优先——单人玩起来太安静",
+            "玩游戏，是为了语音里有人陪",
+        ],
+    },
+    "rpg": {
+        "en": [
+            "RPG-leaning player — build first, ask questions later",
+            "Spends as much time on the character sheet as in combat",
+        ],
+        "zh": [
+            "偏 RPG 玩家——先 build，问题后说",
+            "花在面板上的时间，和战斗一样多",
+        ],
+    },
+    "indie_narrative": {
+        "en": [
+            "Indie atmospheric — the soundtrack matters as much as the mechanics",
+            "Picks games by mood, not by genre",
+        ],
+        "zh": [
+            "独立氛围玩家——OST 和机制一样重要",
+            "按氛围选游戏，不按类型",
+        ],
+    },
+    "eclectic": {
+        "en": [
+            "Eclectic player with a preference for {tag}",
+            "All over the map — {tag} ends up on top this time",
+        ],
+        "zh": [
+            "杂食型玩家，偏好 {tag}",
+            "口味很广——这次 {tag} 排第一",
+        ],
+    },
+    "empty": {
+        "en": ["Your library is too small to characterize."],
+        "zh": ["游戏库太小，还看不出品味。"],
+    },
+}
 
+
+def _classify_archetype(s: set[str]) -> str:
     has_rpg       = bool(s & {"RPG", "Action RPG", "JRPG", "CRPG", "Open World"})
+    has_jrpg      = bool(s & {"JRPG"})
+    has_souls     = bool(s & {"Souls-like", "Dark Fantasy"})
     has_strategy  = bool(s & {"Strategy", "Grand Strategy", "4X", "Turn-Based Strategy"})
     has_mp        = bool(s & {"Multiplayer", "Online Co-Op", "Co-op", "PvP", "Battle Royale", "MOBA"})
+    has_pvp       = bool(s & {"PvP", "Competitive", "Esports", "MOBA", "Battle Royale"})
     has_narrative = bool(s & {"Story Rich", "Choices Matter", "Visual Novel", "Atmospheric"})
+    has_vn        = bool(s & {"Visual Novel"})
     has_rogue     = bool(s & {"Rogue-lite", "Rogue-like", "Action Roguelike"})
     has_horror    = bool(s & {"Horror", "Survival Horror", "Psychological Horror"})
     has_cozy      = bool(s & {"Cozy", "Wholesome", "Relaxing", "Life Sim"})
+    has_sandbox   = bool(s & {"Sandbox", "Crafting", "Building", "Open World Survival Craft"})
+    has_sim       = bool(s & {"Simulation", "Farming Sim", "Management"})
+    has_deck      = bool(s & {"Card Game", "Deckbuilding", "Card Battler"})
+    has_shooter   = bool(s & {"FPS", "Shooter", "Tactical"})
+    has_automation = bool(s & {"Automation", "Resource Management", "Base Building"})
+    has_indie     = bool(s & {"Indie"})
 
-    if has_rpg and has_mp:
-        return "Multi-genre player: deep singleplayer RPGs by night, competitive multiplayer by day"
-    if has_strategy and has_rogue:
-        return "Strategist by trade, roguelite obsessive on the side"
-    if has_rpg and has_narrative:
-        return "Narrative-driven RPG explorer"
-    if has_rogue and has_strategy:
-        return "Deckbuilder & roguelite specialist"
-    if has_horror and has_mp:
-        return "Co-op horror enthusiast"
-    if has_cozy:
-        return "Cozy-leaning player — comfort over challenge"
-    if has_rogue:
-        return "Roguelite obsessive — the run never ends"
-    if has_strategy:
-        return "Grand strategist — empires take time"
-    if has_mp:
-        return "Competitive multiplayer focused"
-    if has_rpg:
-        return "RPG-leaning player"
-    return f"Eclectic player with a preference for {tags[0]}"
+    # Most specific first
+    if has_souls: return "souls"
+    if has_jrpg: return "jrpg"
+    if has_rpg and has_mp: return "rpg_mp"
+    if has_rpg and has_narrative: return "rpg_narrative"
+    if has_strategy and has_rogue: return "strategy_rogue"
+    if has_horror and has_mp: return "horror_mp"
+    if has_horror: return "horror_solo"
+    if has_vn: return "vn"
+    if has_automation: return "automation"
+    if has_sandbox: return "sandbox"
+    if has_deck: return "deckbuilder"
+    if has_shooter and has_pvp: return "shooter_competitive"
+    if has_shooter: return "shooter"
+    if has_cozy: return "cozy"
+    if has_sim: return "sim"
+    if has_rogue: return "rogue"
+    if has_strategy: return "strategy"
+    if has_mp: return "mp"
+    if has_rpg: return "rpg"
+    if has_indie and has_narrative: return "indie_narrative"
+    return "eclectic"
+
+
+def _generate_one_sentence(
+    top_tags: list[tuple[str, float]],
+    steamid: int,
+    lang: str = "en",
+) -> str:
+    """Cheeky one-liner characterizing the player.
+
+    Variant is picked deterministically from steamid so the same user always
+    sees the same line, while different users sampled across the same
+    archetype see varied framings.
+    """
+    if lang not in {"en", "zh"}:
+        lang = "en"
+    if not top_tags:
+        return HERO_TEMPLATES["empty"][lang][0]
+    tags = [t for t, _ in top_tags[:6]]
+    archetype = _classify_archetype(set(tags))
+    variants = HERO_TEMPLATES[archetype][lang]
+    sentence = variants[steamid % len(variants)]
+    if "{tag}" in sentence:
+        sentence = sentence.format(tag=tags[0])
+    return sentence
 
 
 @app.get("/api/taste/{steamid}/profile")
-def taste_profile(steamid: int):
+def taste_profile(steamid: int, lang: str = "zh"):
+    if lang not in {"en", "zh"}:
+        lang = "zh"
     eng = get_engine()
     try:
         library = _library_tuples(steamid)
@@ -281,7 +530,7 @@ def taste_profile(steamid: int):
         })
 
     return {
-        "one_sentence": _generate_one_sentence(top_tags),
+        "one_sentence": _generate_one_sentence(top_tags, steamid, lang),
         "top_tags": [{"tag": t, "weight": round(w, 3)} for t, w in top_tags],
         "clusters": clusters,
         "confidence": round(stats["confidence"], 2),
