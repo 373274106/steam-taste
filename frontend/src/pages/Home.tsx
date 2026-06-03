@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
+import Masthead from "../components/Masthead";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -32,18 +33,7 @@ export default function Home() {
 
   return (
     <main className="min-h-full flex flex-col">
-      {/* Masthead — cartridge-style top bar */}
-      <header className="border-b border-[var(--color-border)]">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-mid)]">
-            <span className="text-[var(--color-accent)] text-sm leading-none">▣</span>
-            <span>playprint <span className="text-[var(--color-text-dim)]">· steam edition</span></span>
-          </div>
-          <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-dim)]">
-            vol.001 · 2026
-          </div>
-        </div>
-      </header>
+      <Masthead meta="vol.001 · 2026" showBack={false} />
 
       {/* Body */}
       <div className="flex-1 flex flex-col">

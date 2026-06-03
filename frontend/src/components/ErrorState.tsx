@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
+import Masthead from "./Masthead";
 
 interface Props {
   message: string;
 }
 
 interface Diagnosis {
+  marker: string;
   title: string;
   body: React.ReactNode;
   cta?: { label: string; href: string };
@@ -13,66 +15,121 @@ interface Diagnosis {
 function diagnose(message: string): Diagnosis {
   const m = message.toLowerCase();
 
-  // Private profile (most common — backend returns 403 with helpful detail)
-  if (m.includes("private") || m.includes("no library data") || m.includes("profile may be private")) {
+  if (
+    m.includes("private") ||
+    m.includes("no library data") ||
+    m.includes("profile may be private")
+  ) {
     return {
-      title: "🔒 资料没公开",
+      marker: "err.privacy",
+      title: "your library is private",
       body: (
         <>
-          <p>Steam 默认不公开你的游戏库。我们没法分析你看不见的东西。</p>
-          <p className="mt-3">两个设置都要打开：</p>
-          <ul className="list-disc list-inside text-slate-300 mt-2 space-y-1">
-            <li><strong>My profile</strong> → Public</li>
-            <li><strong>Game details</strong> → Public（这条单独设置，最容易漏）</li>
+          <p>
+            Steam keeps your library hidden by default. We can't read what we
+            can't see.
+          </p>
+          <p className="mt-3">Two switches both need to be on:</p>
+          <ul className="mt-2 space-y-1 text-[var(--color-text-mid)]">
+            <li className="font-mono text-sm">
+              <span className="text-[var(--color-accent)]">▸</span> my profile{" "}
+              <span className="text-[var(--color-text-dim)]">→ public</span>
+            </li>
+            <li className="font-mono text-sm">
+              <span className="text-[var(--color-accent)]">▸</span> game details{" "}
+              <span className="text-[var(--color-text-dim)]">→ public</span>
+              <span className="text-[var(--color-text-lo)] ml-2 text-xs">
+                (easy to miss — separate toggle)
+              </span>
+            </li>
           </ul>
         </>
       ),
-      cta: { label: "去 Steam 隐私设置", href: "https://steamcommunity.com/my/edit/settings" },
+      cta: {
+        label: "steam privacy settings",
+        href: "https://steamcommunity.com/my/edit/settings",
+      },
     };
   }
 
-  // Vanity / SteamID not found
-  if (m.includes("vanity") || m.includes("not found") || m.includes("cannot interpret")) {
+  if (
+    m.includes("vanity") ||
+    m.includes("not found") ||
+    m.includes("cannot interpret")
+  ) {
     return {
-      title: "🔍 找不到这个用户",
+      marker: "err.404",
+      title: "no player by that name",
       body: (
         <>
-          <p>输入的 SteamID / URL / vanity 名解析不出来。常见原因：</p>
-          <ul className="list-disc list-inside text-slate-300 mt-2 space-y-1">
-            <li>vanity 名拼错</li>
-            <li>账号已被删除或临时锁定</li>
-            <li>不是有效的 17 位 SteamID64</li>
+          <p>We couldn't resolve that SteamID, vanity name, or profile URL.</p>
+          <p className="mt-3">Common reasons:</p>
+          <ul className="mt-2 space-y-1 text-[var(--color-text-mid)] font-mono text-sm">
+            <li>
+              <span className="text-[var(--color-accent)]">▸</span> vanity name
+              typo
+            </li>
+            <li>
+              <span className="text-[var(--color-accent)]">▸</span> account
+              deleted or locked
+            </li>
+            <li>
+              <span className="text-[var(--color-accent)]">▸</span> not a valid
+              17-digit SteamID64
+            </li>
           </ul>
         </>
       ),
     };
   }
 
-  // Network / 5xx — backend or Steam API down
-  if (m.includes("network") || m.includes("503") || m.includes("502") || m.includes("timeout") || m.includes("fetch")) {
+  if (
+    m.includes("network") ||
+    m.includes("503") ||
+    m.includes("502") ||
+    m.includes("timeout") ||
+    m.includes("fetch")
+  ) {
     return {
-      title: "📡 服务暂时不通",
+      marker: "err.net",
+      title: "the line went quiet",
       body: (
         <>
-          <p>后端或 Steam API 没响应。可能：</p>
-          <ul className="list-disc list-inside text-slate-300 mt-2 space-y-1">
-            <li>后端服务挂了 / 还没启动</li>
-            <li>Steam Web API 限流（每天 100k 调用限额，几乎不会爆）</li>
-            <li>你的网络访问不到 steampowered.com</li>
+          <p>The backend or Steam didn't answer in time. Could be:</p>
+          <ul className="mt-2 space-y-1 text-[var(--color-text-mid)] font-mono text-sm">
+            <li>
+              <span className="text-[var(--color-accent)]">▸</span> render free
+              tier cold start (30s warm-up)
+            </li>
+            <li>
+              <span className="text-[var(--color-accent)]">▸</span> steam web
+              api rate limit
+            </li>
+            <li>
+              <span className="text-[var(--color-accent)]">▸</span> your network
+              can't reach steampowered.com
+            </li>
           </ul>
-          <p className="mt-3 text-xs text-slate-500">技术细节: <code>{message}</code></p>
+          <p className="mt-4 text-xs text-[var(--color-text-lo)] font-mono break-all">
+            <span className="text-[var(--color-text-dim)] uppercase tracking-wider">
+              raw:{" "}
+            </span>
+            {message}
+          </p>
         </>
       ),
     };
   }
 
-  // Fallback
   return {
-    title: "⚠ 出错了",
+    marker: "err.unknown",
+    title: "something went sideways",
     body: (
       <>
-        <p>未预期的错误。把这条贴给我可能能帮到诊断：</p>
-        <pre className="mt-3 p-3 bg-slate-900 rounded text-xs text-slate-300 whitespace-pre-wrap overflow-x-auto">
+        <p>
+          An unexpected error. Paste this somewhere so we can diagnose:
+        </p>
+        <pre className="mt-4 p-4 bg-[var(--color-surface-1)] border border-[var(--color-border)] text-xs text-[var(--color-text-mid)] font-mono whitespace-pre-wrap overflow-x-auto">
           {message}
         </pre>
       </>
@@ -84,30 +141,54 @@ export default function ErrorState({ message }: Props) {
   const d = diagnose(message);
 
   return (
-    <div className="min-h-full flex items-center justify-center px-6 py-16">
-      <div className="max-w-xl w-full">
-        <h2 className="text-2xl font-bold mb-4">{d.title}</h2>
-        <div className="text-slate-400 leading-relaxed">{d.body}</div>
+    <main className="min-h-full flex flex-col">
+      <Masthead meta={`iss. ${d.marker}`} />
 
-        <div className="flex gap-3 mt-8">
-          <Link
-            to="/"
-            className="bg-slate-800 hover:bg-slate-700 transition px-4 py-2 rounded font-medium"
-          >
-            ← 返回主页
-          </Link>
-          {d.cta && (
-            <a
-              href={d.cta.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-[var(--color-steam-blue)] hover:bg-blue-500 transition px-4 py-2 rounded font-medium"
+      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-12">
+        <div className="w-full max-w-2xl">
+          <div className="anim-fade-up delay-1">
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-coral)] mb-4 flex items-center gap-3">
+              <span aria-hidden>▰▰</span>
+              <span>{d.marker}</span>
+              <span aria-hidden>▰▰</span>
+            </p>
+            <h1
+              className="font-display text-[var(--color-text-hi)] mb-6"
+              style={{
+                fontSize: "clamp(1.875rem, 5.5vw, 3rem)",
+                lineHeight: 1,
+                letterSpacing: "0.01em",
+                fontWeight: 600,
+              }}
             >
-              {d.cta.label} →
-            </a>
-          )}
+              {d.title}
+            </h1>
+            <div className="text-[var(--color-text-mid)] text-base sm:text-lg leading-relaxed max-w-[52ch]">
+              {d.body}
+            </div>
+
+            <div className="mt-10 flex flex-wrap items-center gap-3">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-2 px-5 py-3 bg-[var(--color-surface-1)] hover:bg-[var(--color-surface-2)] border border-[var(--color-border)] hover:border-[var(--color-accent-soft)] font-mono text-sm uppercase tracking-[0.15em] text-[var(--color-text-mid)] hover:text-[var(--color-text-hi)] transition-colors"
+              >
+                <span>←</span> new entry
+              </Link>
+              {d.cta && (
+                <a
+                  href={d.cta.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-3 bg-[var(--color-accent)] hover:bg-[var(--color-accent-deep)] text-[var(--color-bg)] font-display tabular transition-colors"
+                  style={{ fontSize: "1rem", fontWeight: 600 }}
+                >
+                  {d.cta.label} <span>↗</span>
+                </a>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

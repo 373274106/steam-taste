@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
-import type { ProfileSummary, TasteProfile, RegretReport, RecommendResponse } from "../lib/types";
+import type {
+  ProfileSummary,
+  TasteProfile,
+  RegretReport,
+  RecommendResponse,
+} from "../lib/types";
+import Masthead from "../components/Masthead";
 import TasteProfileTab from "../components/TasteProfileTab";
 import RecommendationsTab from "../components/RecommendationsTab";
 import RegretTab from "../components/RegretTab";
@@ -9,8 +15,13 @@ import LoadingState from "../components/LoadingState";
 import ErrorState from "../components/ErrorState";
 
 type Tab = "taste" | "recs" | "regret";
-
 type LoadStep = "library" | "taste" | "recs" | "regret" | "done";
+
+const ACTS: { key: Tab; roman: string; caption: string }[] = [
+  { key: "taste", roman: "i", caption: "your taste" },
+  { key: "recs", roman: "ii", caption: "what you'd love next" },
+  { key: "regret", roman: "iii", caption: "quietly outgrown" },
+];
 
 export default function Result() {
   const [params] = useSearchParams();
@@ -38,8 +49,6 @@ export default function Result() {
 
     (async () => {
       try {
-        // Fetch in stages so the loading screen can advance through steps.
-        // Library + summary first (depends on Steam API, slowest)
         const s = await api.profileSummary(steamid);
         if (cancelled) return;
         setSummary(s);
@@ -65,7 +74,7 @@ export default function Result() {
         setStep("done");
       } catch (err: any) {
         if (cancelled) return;
-        setError(err.message || "加载失败");
+        setError(err.message || "loading failed");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -75,70 +84,128 @@ export default function Result() {
     };
   }, [steamid]);
 
-  if (loading) {
-    return <LoadingState step={step} />;
-  }
-
-  if (error) {
-    return <ErrorState message={error} />;
-  }
-
+  if (loading) return <LoadingState step={step} />;
+  if (error) return <ErrorState message={error} />;
   if (!summary || !taste) return null;
 
+  const personaShort = (summary.persona_name || (isDemo ? "Demo Player" : "Player"))
+    .toUpperCase();
+  const hoursStr = summary.total_hours.toLocaleString(undefined, {
+    maximumFractionDigits: 0,
+  });
+
   return (
-    <div className="min-h-full">
-      {/* Top bar */}
-      <div className="sticky top-0 z-10 bg-slate-950/90 backdrop-blur border-b border-slate-800">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-4">
-          {summary.avatar_url && (
-            <img
-              src={summary.avatar_url}
-              alt=""
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex-shrink-0"
-            />
-          )}
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold truncate">
-              {summary.persona_name || (isDemo ? "Demo Player" : "Player")}
-            </div>
-            <div className="text-xs text-slate-400">
-              {summary.library_size} games · {summary.total_hours.toLocaleString()} hours
-              {isDemo && <span className="ml-2 text-blue-400">DEMO</span>}
+    <main className="min-h-full">
+      <Masthead meta={isDemo ? "iss. demo · pp-r1" : "iss. live · pp-r1"} />
+
+      {/* Player profile spread */}
+      <section className="border-b border-[var(--color-border)]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          <div className="anim-fade-up delay-1">
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--color-accent)] mb-5 flex items-center gap-3">
+              <span aria-hidden>▰▰</span>
+              <span>
+                player profile{isDemo && (
+                  <span className="text-[var(--color-coral)]"> · demo</span>
+                )}
+              </span>
+              <span aria-hidden>▰▰</span>
+            </p>
+            <div className="flex items-start gap-5 sm:gap-7">
+              {summary.avatar_url && (
+                <img
+                  src={summary.avatar_url}
+                  alt=""
+                  className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 border border-[var(--color-border-strong)] grayscale-[15%]"
+                />
+              )}
+              <div className="min-w-0 flex-1">
+                <h1
+                  className="font-display text-[var(--color-text-hi)] mb-3 truncate"
+                  style={{
+                    fontSize: "clamp(2rem, 6vw, 3.75rem)",
+                    lineHeight: 0.95,
+                    letterSpacing: "0.01em",
+                    fontWeight: 600,
+                  }}
+                  title={personaShort}
+                >
+                  {personaShort}
+                </h1>
+                <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1.5">
+                  <span className="font-mono text-base sm:text-lg text-[var(--color-text-mid)] tabular">
+                    <span className="text-[var(--color-text-hi)]">
+                      {summary.library_size.toLocaleString()}
+                    </span>
+                    <span className="text-[var(--color-text-dim)]"> games</span>
+                  </span>
+                  <span className="font-mono text-base sm:text-lg text-[var(--color-text-mid)] tabular">
+                    <span className="text-[var(--color-text-hi)]">{hoursStr}</span>
+                    <span className="text-[var(--color-text-dim)]"> hours</span>
+                  </span>
+                  <span className="font-mono text-xs text-[var(--color-text-dim)] uppercase tracking-[0.18em] ml-auto hidden sm:inline">
+                    sid · ····{summary.steam_id.slice(-6)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-          <Link to="/" className="text-sm text-slate-400 hover:text-slate-200 flex-shrink-0">
-            换一个 →
-          </Link>
         </div>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex gap-2 -mb-px overflow-x-auto scrollbar-thin">
-          {([
-            ["taste", "📊 Taste"],
-            ["recs", "💎 Recommendations"],
-            ["regret", "💀 Library Regret"],
-          ] as const).map(([k, label]) => (
-            <button
-              key={k}
-              onClick={() => setTab(k)}
-              className={`px-3 sm:px-4 py-2 text-sm border-b-2 transition whitespace-nowrap ${
-                tab === k
-                  ? "border-[var(--color-steam-blue)] text-white"
-                  : "border-transparent text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      </section>
 
-      {/* Tab content — key on tab so React unmounts/remounts → fresh fade-in */}
-      <div key={tab} className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 fade-in">
+      {/* Act navigator — sticky */}
+      <nav className="sticky top-0 z-10 bg-[var(--color-bg)]/95 backdrop-blur-sm border-b border-[var(--color-border)]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex items-stretch overflow-x-auto">
+            {ACTS.map((a) => {
+              const isActive = tab === a.key;
+              return (
+                <button
+                  key={a.key}
+                  onClick={() => setTab(a.key)}
+                  className={`flex-1 min-w-[160px] py-4 sm:py-5 px-3 text-left border-b-2 transition-colors whitespace-nowrap ${
+                    isActive
+                      ? "border-[var(--color-accent)]"
+                      : "border-transparent hover:bg-[var(--color-surface-1)]"
+                  }`}
+                >
+                  <div
+                    className={`font-mono text-[10px] uppercase tracking-[0.25em] mb-1 ${
+                      isActive
+                        ? "text-[var(--color-accent)]"
+                        : "text-[var(--color-text-dim)]"
+                    }`}
+                  >
+                    act {a.roman}
+                  </div>
+                  <div
+                    className={`font-display text-base sm:text-lg ${
+                      isActive
+                        ? "text-[var(--color-text-hi)]"
+                        : "text-[var(--color-text-mid)]"
+                    }`}
+                    style={{ fontWeight: 500 }}
+                  >
+                    {a.caption}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+
+      {/* Act content */}
+      <section
+        key={tab}
+        className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 anim-fade-up"
+      >
         {tab === "taste" && <TasteProfileTab taste={taste} onSelectTab={setTab} />}
         {tab === "recs" && (
           <RecommendationsTab recsNew={recsBest!} recsOwned={recsOwned!} />
         )}
         {tab === "regret" && <RegretTab regret={regret!} />}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
