@@ -151,6 +151,39 @@
     "patternLabel": "模式编号",
     "playtimeMin": "分钟"
   },
+  "errorState": {
+    "privacy": {
+      "title": "你的游戏库是私密的",
+      "body": "Steam 默认把你的游戏库藏起来。我们看不到的东西，没法读。",
+      "togglesIntro": "两个开关都要打开：",
+      "toggleProfileLabel": "个人资料",
+      "toggleProfileValue": "→ 公开",
+      "toggleDetailsLabel": "游戏详情",
+      "toggleDetailsValue": "→ 公开",
+      "toggleDetailsNote": "（很容易漏——是独立开关）",
+      "ctaLabel": "Steam 隐私设置"
+    },
+    "notFound": {
+      "title": "没有这个玩家",
+      "body": "我们无法解析这个 SteamID、自定义昵称或档案 URL。",
+      "reasonsIntro": "常见原因：",
+      "reasonVanity": "自定义昵称拼错",
+      "reasonDeleted": "账号被删除或锁定",
+      "reasonInvalid": "不是合法的 17 位 SteamID64"
+    },
+    "network": {
+      "title": "信号断了",
+      "body": "后端或 Steam 没在规定时间内响应。可能是：",
+      "reasonCold": "Render 冷启动（30 秒预热）",
+      "reasonRate": "Steam Web API 触发了速率限制",
+      "reasonReach": "你的网络访问不到 steampowered.com",
+      "rawLabel": "raw:"
+    },
+    "unknown": {
+      "title": "出了点意外",
+      "body": "一个意外的错误。把下面这串贴出来，方便诊断："
+    }
+  },
   "loading": {
     "kicker": "正在冲洗",
     "heroLine1": "正在读取",

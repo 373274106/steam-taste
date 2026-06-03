@@ -329,13 +329,14 @@ git push                                   # 自动触发 Vercel + Render 重新
 ### Scoreboard
 
 **剩下没做的（按 ROI 排序）：**
-1. ⭐ **Render 冷启动修复**（~1 小时）—— 唯一阻挡 "live demo 链接能体面投出去" 的事
-2. **扩 corpus 5k → 15k**（一个周末）—— 解决长尾老游戏推荐 + 给 Phase 4+ 翻盘机会
-3. **Phase 5: Bayesian + multi-query**（数天）—— 让 "multi-query similarity" 从规划变成上线
-4. **ErrorState 补 i18n**（1-2 小时）—— 已是唯一未翻译的页面
-5. LLM 文案润色 / 协同过滤 / 价格分析（都是 nice-to-have，不做也无伤）
+1. **扩 corpus 5k → 15k**（一个周末）—— 解决长尾老游戏推荐 + 给 Phase 4+ 翻盘机会
+2. **Phase 5: Bayesian + multi-query**（数天）—— 让 "multi-query similarity" 从规划变成上线
+3. LLM 文案润色 / 协同过滤 / 价格分析（都是 nice-to-have，不做也无伤）
 
-**已完成（自上次同步以来 4 个 commit）：**
+**已 demote：** Render 冷启动修复 —— 后端用付费档，冷启动不严重，不再列 P1。
+
+**已完成（自上次同步以来 5 个 commit）：**
+- ✅ ErrorState 补 i18n（**本轮**）
 - ✅ Regret 文案多样化（commit `eb764d4`）
 - ✅ release_year 偏置 + fresh_fit mode（commit `95a8792`）
 - ✅ 中英双语 i18n（commit `8eb11ee`）
@@ -351,10 +352,8 @@ git push                                   # 自动触发 Vercel + Render 重新
 
 ### 优先级 2 — 用户体验底线
 
-1. **修 Render 冷启动**（~1 小时）⭐ **唯一一个还没做的 P2**
-   - **uptimerobot.com 心跳**（5 分钟）：免费档每 5 分钟 ping `/api/health`，dyno 永不冻
-   - **+ 前端 Home 页静默预热**（10 分钟代码）：用户打开 Home 时后台 `fetch('/api/health')`，等他贴完 SteamID 后端已经热
-   - **不修的代价**：每个第一次访问 live demo 的招聘人都要等 30s，直接拉低 portfolio 印象
+1. ~~**修 Render 冷启动**~~ — 后端用付费档，冷启动不严重，**demote 出 scoreboard**。
+   - 如果某天迁回 free tier：uptimerobot 心跳（5 分钟）+ 前端 Home 静默预热可以恢复方案
 
 2. ✅ ~~**Regret 文案多样化**~~（commit `eb764d4`）
    - Mixed 4 变体（single_anchor_deep / high_untouched_ratio / saturation / classic）+ Pure 9 domain 模板（survival_craft / grand_strategy / souls_like / roguelite / horror / jrpg / cozy / simulation / shmup）+ 3 quantitative fallbacks
@@ -373,7 +372,7 @@ git push                                   # 自动触发 Vercel + Render 重新
    - Masthead 顶栏 `EN / 中` pill 切换器，localStorage 持久化（key=`playprint.lang`）
    - 后端 `regret_endpoint(steamid, lang)` → `detect_regret(..., lang)` → `_build_diagnosis(cluster, lang)`
    - 切换语言时 [Result.tsx](frontend/src/pages/Result.tsx) 自动 refetch regret（前端 t() 直接生效，后端 prose 必须 refetch）
-   - **ErrorState 本轮未翻译**——多段富 JSX 诊断 + 嵌套列表，refactor 量大，列入 §11 已知遗留
+   - ✅ ~~ErrorState 未翻译~~ —— 已补，4 类 diagnosis（privacy / notFound / network / unknown）全部 i18n，diagnose() 改返 `kind` 让渲染层切换 body 模板
 
 ### 优先级 4 — 数据 / 算法深化（高工程量、ROI 因目标而异）
 
@@ -406,9 +405,8 @@ git push                                   # 自动触发 Vercel + Render 重新
 
 ### 仍然 open
 
-- ⚠️ **Render free tier 冷启动 30s**——已知限制，不算 bug。但对 portfolio 体验影响大，见 §10 scoreboard #1。
-- ⚠️ **Top recs 倾向长尾老游戏**：corpus 是按 SteamSpy 销量 top-5k 抓的，新游戏覆盖不足。`fresh_fit` mode（commit `95a8792`）能缓解但治标，根治要扩 corpus（§10 scoreboard #2）。
-- ⚠️ **ErrorState 未 i18n**：i18n commit 跳过了——`diagnose()` 的三个 diagnosis（私密 / 找不到 / 网络）是多段 JSX + 嵌套列表，不是平面字符串。翻译需把 body 拆 `<Trans>` 组件 + list items 拆 keys。预计 1-2 小时，优先级低（错误路径访问频率低）。
+- ℹ️ **Render 冷启动**：当前后端是付费档，冷启动不严重，已 demote。若日后回 free tier，方案见 §10。
+- ⚠️ **Top recs 倾向长尾老游戏**：corpus 是按 SteamSpy 销量 top-5k 抓的，新游戏覆盖不足。`fresh_fit` mode（commit `95a8792`）能缓解但治标，根治要扩 corpus（§10 scoreboard #1）。
 - ⚠️ **雷达图 narrow viewport 标签内边距**：~900px 以下时左右两侧长名字（如 "Great Soundtrack"）紧贴 SVG 边缘。不截断，只是挤。修法：[TagRadar.tsx](frontend/src/components/TagRadar.tsx) 里 `radius = center * 0.62` 降到 `0.55`，或外层套 `px-2`。
 
 ### 信息性 / 易踩坑
@@ -421,6 +419,7 @@ git push                                   # 自动触发 Vercel + Render 重新
 
 ### 已修复（按时间倒序）
 
+- ✅ ~~ErrorState 未 i18n~~ — 本轮，diagnose() 改返 kind，body 在组件里按 kind 切换
 - ✅ ~~Regret 文案重复~~ — commit `eb764d4`
 - ✅ ~~`release_date` 未用于偏置~~ — commit `95a8792`
 - ✅ ~~高时长宽 tag 游戏霸占归因~~ — closed-form decomposition + closest_match，commit `246bab9`
@@ -442,7 +441,7 @@ git push                                   # 自动触发 Vercel + Render 重新
 5. **改动后必须本地跑通再 push**——push = 自动重新部署生产。本地：
    - 后端：`py -m uvicorn backend.main:app --reload`
    - 前端：`cd frontend && npm run dev`
-6. **当前最高优先级 = Render 冷启动**——参考 §10 scoreboard #1。修了之后 portfolio 链接才能体面地发出去。
+6. **当前最高优先级 = 扩 corpus 5k → 15k**——参考 §10 scoreboard #1。可缓解长尾老游戏问题，且有翻盘 Phase 4+ 消融的可能。
 
 ---
 

@@ -151,6 +151,39 @@
     "patternLabel": "pattern no.",
     "playtimeMin": "min"
   },
+  "errorState": {
+    "privacy": {
+      "title": "your library is private",
+      "body": "Steam keeps your library hidden by default. We can't read what we can't see.",
+      "togglesIntro": "Two switches both need to be on:",
+      "toggleProfileLabel": "my profile",
+      "toggleProfileValue": "→ public",
+      "toggleDetailsLabel": "game details",
+      "toggleDetailsValue": "→ public",
+      "toggleDetailsNote": "(easy to miss — separate toggle)",
+      "ctaLabel": "steam privacy settings"
+    },
+    "notFound": {
+      "title": "no player by that name",
+      "body": "We couldn't resolve that SteamID, vanity name, or profile URL.",
+      "reasonsIntro": "Common reasons:",
+      "reasonVanity": "vanity name typo",
+      "reasonDeleted": "account deleted or locked",
+      "reasonInvalid": "not a valid 17-digit SteamID64"
+    },
+    "network": {
+      "title": "the line went quiet",
+      "body": "The backend or Steam didn't answer in time. Could be:",
+      "reasonCold": "render cold start (30s warm-up)",
+      "reasonRate": "steam web api rate limit",
+      "reasonReach": "your network can't reach steampowered.com",
+      "rawLabel": "raw:"
+    },
+    "unknown": {
+      "title": "something went sideways",
+      "body": "An unexpected error. Paste this somewhere so we can diagnose:"
+    }
+  },
   "loading": {
     "kicker": "developing",
     "heroLine1": "READING",
