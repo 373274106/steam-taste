@@ -5,8 +5,11 @@ import type { ProfileSummary, TasteProfile, RegretReport, RecommendResponse } fr
 import TasteProfileTab from "../components/TasteProfileTab";
 import RecommendationsTab from "../components/RecommendationsTab";
 import RegretTab from "../components/RegretTab";
+import LoadingState from "../components/LoadingState";
 
 type Tab = "taste" | "recs" | "regret";
+
+type LoadStep = "library" | "taste" | "recs" | "regret" | "done";
 
 export default function Result() {
   const [params] = useSearchParams();
@@ -23,28 +26,42 @@ export default function Result() {
   const [regret, setRegret] = useState<RegretReport | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [step, setStep] = useState<LoadStep>("library");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setStep("library");
 
     (async () => {
       try {
-        const [s, t, rb, ro, rg] = await Promise.all([
-          api.profileSummary(steamid),
-          api.tasteProfile(steamid),
-          api.recommendNew(steamid, "best_fit", 10),
-          api.recommendOwned(steamid, 10),
-          api.regret(steamid),
-        ]);
+        // Fetch in stages so the loading screen can advance through steps.
+        // Library + summary first (depends on Steam API, slowest)
+        const s = await api.profileSummary(steamid);
         if (cancelled) return;
         setSummary(s);
+        setStep("taste");
+
+        const t = await api.tasteProfile(steamid);
+        if (cancelled) return;
         setTaste(t);
+        setStep("recs");
+
+        const [rb, ro] = await Promise.all([
+          api.recommendNew(steamid, "best_fit", 10),
+          api.recommendOwned(steamid, 10),
+        ]);
+        if (cancelled) return;
         setRecsBest(rb);
         setRecsOwned(ro);
+        setStep("regret");
+
+        const rg = await api.regret(steamid);
+        if (cancelled) return;
         setRegret(rg);
+        setStep("done");
       } catch (err: any) {
         if (cancelled) return;
         setError(err.message || "加载失败");
@@ -58,16 +75,7 @@ export default function Result() {
   }, [steamid]);
 
   if (loading) {
-    return (
-      <div className="min-h-full flex items-center justify-center text-slate-400">
-        <div className="text-center">
-          <div className="animate-pulse text-2xl mb-3">分析中...</div>
-          <div className="text-sm">
-            拉取游戏库 → 计算 taste 向量 → 聚类 → 生成推荐
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingState step={step} />;
   }
 
   if (error) {

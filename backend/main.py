@@ -297,6 +297,16 @@ def taste_profile(steamid: int):
 # Recommendations
 # ============================================================
 
+def _match_pct(score: float) -> float:
+    """Rescale raw cosine [0, 1] to a more intuitive 0-99 match %.
+    Typical good matches sit at sim 0.4-0.7 — sqrt curve lifts them
+    into the 60-85 range that feels confident, while keeping low scores low.
+    """
+    if score <= 0:
+        return 1.0
+    return max(1.0, min(99.0, (score ** 0.5) * 100))
+
+
 def _build_rec_card(
     eng: TasteEngine,
     appid: int,
@@ -307,7 +317,7 @@ def _build_rec_card(
 ) -> dict:
     ref = eng.game_ref(appid)
     shared, evidence = eng.explain(appid, taste_vec, library)
-    pct = max(1.0, min(99.0, match_score * 100))
+    pct = _match_pct(match_score)
     card = {
         "appid": appid,
         "name": ref.name,

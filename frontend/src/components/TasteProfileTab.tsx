@@ -51,27 +51,53 @@ export default function TasteProfileTab({ taste, onSelectTab }: Props) {
           <h3 className="font-semibold mb-4 text-sm uppercase tracking-wider text-slate-400">
             Taste Clusters ({taste.clusters.length})
           </h3>
-          <div className="space-y-3 max-h-[420px] overflow-y-auto pr-2">
+          <div className="space-y-3 max-h-[480px] overflow-y-auto pr-2">
             {taste.clusters.slice(0, 12).map((c) => (
               <div
                 key={c.label}
-                className={`p-3 rounded border ${
+                className={`p-3 rounded border transition-colors ${
                   c.is_regret
                     ? "border-red-900/60 bg-red-950/20"
-                    : "border-slate-800 bg-slate-900/40"
+                    : "border-slate-800 bg-slate-900/40 hover:border-slate-700"
                 }`}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="font-medium text-sm">{c.name}</div>
-                  <div className="text-xs text-slate-400">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-medium text-sm truncate">{c.name}</div>
+                  <div className="text-xs text-slate-400 flex-shrink-0 ml-2">
                     {c.total_hours.toFixed(0)}h · {c.game_count} games
                   </div>
                 </div>
-                <div className="text-xs text-slate-500">
+
+                {/* Thumbnail strip */}
+                {c.sample_games.length > 0 && (
+                  <div className="flex gap-1 mb-2">
+                    {c.sample_games.slice(0, 4).map((g) => (
+                      <a
+                        key={g.appid}
+                        href={`https://store.steampowered.com/app/${g.appid}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 min-w-0 group"
+                        title={`${g.name} · ${g.playtime_hours}h`}
+                      >
+                        <img
+                          src={`https://cdn.akamai.steamstatic.com/steam/apps/${g.appid}/header.jpg`}
+                          alt=""
+                          className="w-full aspect-[460/215] object-cover rounded bg-slate-950 group-hover:opacity-80 transition"
+                          onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+                        />
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                <div className="text-xs text-slate-500 truncate">
                   {c.sample_games.slice(0, 3).map((g) => g.name).join(" · ")}
                 </div>
+
                 {c.is_regret && (
-                  <div className="text-xs text-red-400 mt-1">
+                  <div className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500" />
                     {c.regret_kind === "mixed" ? "Mixed regret" : "Pure regret"}
                   </div>
                 )}
