@@ -33,10 +33,6 @@
     "footer": {
       "privacyLabel": "隐私",
       "privacyBody": "账号资料和游戏详情都需要公开。每次请求都现拉库，从不存储。",
-      "howLabel": "工作原理",
-      "howBody": "TF-IDF 标签相似度 + 自训练 50 维 PPMI 嵌入 + HDBSCAN 聚类。纯 numpy，无 LLM。",
-      "colophonLabel": "排印",
-      "colophonPrefix": "字体：Pixelify Sans + Hanken Grotesk。",
       "githubLink": "GitHub 源代码 ↗"
     }
   },
@@ -96,7 +92,7 @@
     },
     "intros": {
       "new": "按品味相似度排序，排除已拥有。每条推荐附带证据——你库里贡献最大的游戏。",
-      "owned": "你买了但几乎没碰的游戏，按当前品味契合度排序。Steam 永远不会给你这个列表——你玩完已有的，不会给他们带来新收入。"
+      "owned": "你买了但几乎没碰的游戏，按当前品味契合度排序。"
     },
     "ranking": "排序",
     "modes": {

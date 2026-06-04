@@ -33,10 +33,6 @@
     "footer": {
       "privacyLabel": "privacy",
       "privacyBody": "Profile and game details must be public. Libraries are fetched live per request, never stored.",
-      "howLabel": "how it works",
-      "howBody": "TF-IDF tag similarity layered with a self-trained 50-d PPMI embedding and HDBSCAN clustering. All numpy, no LLM.",
-      "colophonLabel": "colophon",
-      "colophonPrefix": "Set in Pixelify Sans and Hanken Grotesk.",
       "githubLink": "Source on GitHub ↗"
     }
   },
@@ -96,7 +92,7 @@
     },
     "intros": {
       "new": "Ranked by taste similarity against your library. Excludes anything already in your collection. Each pick comes with its evidence — the games of yours that contributed most to the match.",
-      "owned": "Games you already bought but barely started, ranked by how well they fit your current taste. Steam won't show you this list — finishing what you own doesn't drive their revenue."
+      "owned": "Games you already bought but barely started, ranked by how well they fit your current taste."
     },
     "ranking": "ranking",
     "modes": {

@@ -197,8 +197,8 @@ export default function Home() {
 
           {/* Masthead footer */}
           <footer className="anim-fade-up delay-6 mt-24 pt-8 border-t border-[var(--color-border)]">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-7">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+              <div className="max-w-md">
                 <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-3">
                   {t("home.footer.privacyLabel")}
                 </div>
@@ -206,30 +206,14 @@ export default function Home() {
                   {t("home.footer.privacyBody")}
                 </div>
               </div>
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-3">
-                  {t("home.footer.howLabel")}
-                </div>
-                <div className="text-sm text-[var(--color-text-lo)] leading-relaxed">
-                  {t("home.footer.howBody")}
-                </div>
-              </div>
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-dim)] mb-3">
-                  {t("home.footer.colophonLabel")}
-                </div>
-                <div className="text-sm text-[var(--color-text-lo)] leading-relaxed">
-                  {t("home.footer.colophonPrefix")}{" "}
-                  <a
-                    href="https://github.com/373274106/steam-taste"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[var(--color-text-mid)] hover:text-[var(--color-accent)] underline underline-offset-2 decoration-[var(--color-border-strong)] hover:decoration-[var(--color-accent)] transition-colors"
-                  >
-                    {t("home.footer.githubLink")}
-                  </a>
-                </div>
-              </div>
+              <a
+                href="https://github.com/373274106/steam-taste"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--color-text-mid)] hover:text-[var(--color-accent)] transition-colors shrink-0 self-start sm:self-auto"
+              >
+                {t("home.footer.githubLink")}
+              </a>
             </div>
           </footer>
         </div>
