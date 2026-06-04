@@ -125,7 +125,7 @@ e:\study\project\
 │           └── ErrorState.tsx         # 智能错误诊断（私密资料/找不到/网络）
 │
 ├── scripts/                         # 一次性 / 离线脚本
-│   ├── phase1_fetch_corpus.py       # 抓 5000 款游戏（~2 小时，可续传）
+│   ├── phase1_fetch_corpus.py       # 抓 SteamSpy top N 款游戏（默认 5 页 ~5k；当前用 --pages 15 ~14.3k）
 │   ├── phase1_build_index.py        # 构建 TF-IDF 矩阵
 │   ├── phase1_health_check.py       # 抽样验证 nearest neighbor
 │   ├── phase2_test_engine.py        # 离线测试 demo 用户
@@ -197,7 +197,7 @@ aa3d4e1  Polish: mobile responsive + smart error states + demo card + fade-in
 - 决策：tag-based 主路径，砍掉 transformer 依赖
 
 ### Phase 1：Corpus + TF-IDF 基线
-- 抓 SteamSpy top 5000 款元数据 + 标签
+- 抓 SteamSpy top 5000 款元数据 + 标签（初始版本；现已扩到 14270 款，见 Phase 4++ §7）
 - 构建 tag 倒排索引 + sparse TF-IDF 矩阵
 - 健康检查：随机 10 款游戏的邻居人眼判断合理
 
@@ -384,7 +384,7 @@ git push                                   # 自动触发 Vercel + Render 重新
    - 每模板有 `zh` + `en` 平行字段，[regret_detector.py:_build_diagnosis(cluster, lang)](backend/regret_detector.py)，i18n 用
 
 3. ✅ ~~**release_year 偏置 + fresh_fit mode**~~（commit `95a8792`）
-   - [taste_engine.py:_parse_year()](backend/taste_engine.py) regex，corpus 4967/4985 命中 100%
+   - [taste_engine.py:_parse_year()](backend/taste_engine.py) regex，corpus 14230/14270 命中 99.7%（5k 版本时 4967/4985）
    - 公式 `recency = 1 / (1 + age/5)`，参考年份取 corpus 最新年（自动跟刷数据走）
    - `recommend(mode="fresh_fit")` 应用 `sims *= 1 + 0.30 * recency`，叠加在 quality boost 之上
    - 前端 [RecommendationsTab](frontend/src/components/RecommendationsTab.tsx) 加 best fit / fresh fit pill toggle，切换轻量级 refetch 不重跑 pipeline

@@ -63,19 +63,21 @@ The 30-point gap is the marketing copy in store descriptions polluting the seman
 
 ### Phase 4 / 4+ — self-trained retrieval ablation
 
-Two self-trained methods on top of the TF-IDF baseline, evaluated on a held-out probe of 75 games across 8 clusters (script: [`scripts/phase4plus_compare.py`](scripts/phase4plus_compare.py)):
+Two self-trained methods on top of the TF-IDF baseline, evaluated on a held-out probe of 75 games across 8 clusters (script: [`scripts/phase4plus_compare.py`](scripts/phase4plus_compare.py)). Numbers below are on the **15k-game corpus** (re-run after expanding from 5k):
 
 | Method | Merged top-5 hit rate | Δ vs TF-IDF | Production |
 |---|---|---|---|
 | TF-IDF baseline | 83.2% | — | `/api/game/similar?method=tfidf` |
-| **PPMI + SVD tag embedding** (Phase 4) | **85.6%** | **+2.4 pp** | `/api/game/similar?method=ppmi` ✅ |
-| InfoNCE-trained dual encoder (Phase 4+) | 81.1% | −2.1 pp (within ±5.1 pp 95% CI) | `/api/game/similar?method=trained` (kept for comparison) |
+| **PPMI + SVD tag embedding** (Phase 4) | **86.6%** | **+3.4 pp** | `/api/game/similar?method=ppmi` ✅ |
+| InfoNCE-trained dual encoder (Phase 4+) | 75.3% | −7.9 pp (outside ±5.0 pp 95% CI) | `/api/game/similar?method=trained` (kept for comparison) |
 
-The PPMI + SVD layer is the clean win — synonyms collapse (`Rogue-like` ↔ `Rogue-lite` ↔ `Action Roguelike` cosine ≈ 0.85-0.96) and per-cluster breakdown shows strong lifts where the tag vocabulary is fragmented (cozy_life_sim +15.6 pp, narrative +20.0 pp).
+PPMI + SVD remains the clean win — synonyms collapse cleanly (`Rogue-like` ↔ `Rogue-lite` ≈ 0.99, `Deckbuilding` ↔ `Card Battler` ≈ 0.98), and per-cluster breakdown shows strong lifts where the tag vocabulary is fragmented (cozy_life_sim +17.8 pp, narrative +22.9 pp). 3× more games make the co-occurrence matrix denser, so SVD finds tighter synonym structure — PPMI extended its lead from +2.4 pp at 5k.
 
-The InfoNCE-trained dual encoder, however, **did not separate from the matrix-factorization baseline** at this sample size. The −2.1 pp delta is within the probe's 95% confidence interval (±5.1 pp), so the honest reading is "matches baseline within noise" — not "loses." That's still the negative result for the deep-learning hypothesis on this corpus, and it lines up with Levy & Goldberg (2014): word2vec ≈ SPPMI matrix factorization, and on ~5k games with curated user tags as input, contrastive learning has nothing extra to find.
+The InfoNCE-trained dual encoder went the other way: from a statistical tie at 5k (−2.1 pp, inside CI) to a clear loss at 15k (−7.9 pp, outside CI). **Scaling the data 3× did not flip the ablation; if anything, contrastive learning lost more ground.** The best epoch is still 1 (model saturates immediately), and per-cluster the drop is concentrated on `action_rpg` (−25.9 pp) and `cozy_life_sim` (−11.1 pp) — clusters with rich tag vocabularies where TF-IDF already encodes the relevant overlap precisely. With 14k unique games in the InfoNCE batch, negatives become semantically diverse enough that the model learns coarse separation but loses the fine top-5 ranking the probe measures.
 
-**That null result is in the repo on purpose.** It's the honest answer to "did you try deep learning?" and a better portfolio signal than a faked SOTA claim.
+This is Levy & Goldberg (2014) showing up empirically: word2vec ≈ SPPMI matrix factorization, and on a curated user-tag corpus the SPPMI side wins outright. Adding model capacity or training data doesn't help — the **ceiling here is the signal in the input, not the architecture**.
+
+**That negative result is the point.** Honest scaling experiments are a stronger portfolio signal than "I tried a Transformer and it worked." Paths to escape the ceiling (auxiliary features beyond tags; distillation from Steam's own "More Like This"; residual hybrid; masked-tag pretext) are noted in [HANDOFF §7 Phase 4+](HANDOFF.md) for future exploration.
 
 Both training scripts in [`scripts/`](scripts/) — PPMI is ~100 lines of numpy, the InfoNCE encoder is [`phase4plus_train.py`](scripts/phase4plus_train.py).
 
@@ -146,7 +148,7 @@ Steam will never ship this — fewer purchases is fewer purchases. Playprint doe
                                     │
                   ┌─────────────────┴──────────────────┐
                   │ Layer 1-2 (offline, prebuilt):     │
-                  │  TF-IDF (4985 × 437 sparse)        │
+                  │  TF-IDF (14270 × 445 sparse)       │
                   │  PPMI + SVD tag embedding (50 d)   │
                   │  trained dual encoder (256 d)      │
                   └────────────────────────────────────┘
@@ -201,11 +203,12 @@ scripts/                Offline & evaluation
   phase4_*                PPMI + SVD tag embedding
   phase4plus_*            trained dual encoder + three-way ablation
   embedding_compare.py    Phase 0 six-way method comparison
-data/                   Prebuilt artifacts (committed for fast deploys)
-  corpus.db               4985 games + tags
-  tfidf.npz               4985 × 437 sparse
-  tag_embedding.npy       437 × 50 (PPMI + SVD)
-  game_embedding.npy      4985 × 256 (trained dual encoder)
+data/                   Prebuilt artifacts (committed for fast deploys; ~45 MB total)
+  corpus.db               14270 games + tags
+  tfidf.npz               14270 × 445 sparse
+  tag_embedding.npy       445 × 50 (PPMI + SVD)
+  game_embedding.npy      14270 × 256 (trained dual encoder)
+  tag_i18n.json           en → zh tag name map (Steam official, 90.6% coverage)
 ```
 
 Full design doc: [`steam-game-advisor-project.md`](steam-game-advisor-project.md).
