@@ -224,28 +224,33 @@ aa3d4e1  Polish: mobile responsive + smart error states + demo card + fade-in
 - 关键文件：`scripts/phase4_build_tag_embedding.py`，运行时入口 `TasteEngine.tag_neighbors()` / `.game_dense_vec()`
 
 ### Phase 4+：Trained Dual-Encoder（InfoNCE）+ 三路检索消融
-- PyTorch 训练 MLP encoder（V → 512 → 256，dropout 0.2 + L2 norm），InfoNCE in-batch negatives，cosine LR + early stop（监控 probe_merged）
+- PyTorch 训练 MLP encoder（input_dim → 512 → 256，dropout 0.2 + L2 norm），InfoNCE in-batch negatives，cosine LR + early stop（监控 probe_merged）
 - 正样本：共享 ≥2 个 high-IDF tag 的游戏对（**14k 语料下 91 万对**，5k 时 10.6 万对）；Phase 0 probe 集 75 款 held out 评估（84 个相关 appid 全部从训练对中剔除）
-- **消融结果（15k 语料 — 重训后诚实更新）**：
+- 输入：默认 449 维 = 445 维 TF-IDF + 4 维 aux features（`review_ratio`, `review_count_log`, `owners_log`, `year_norm`，z-score 归一）。这 4 维信号 **baseline 拿不到**——是 Path A 实验留下的能力。`--no-aux` 旗标可关掉做对照
+- **消融结果（15k 语料 + aux features，**当前生产embedding**）**：
 
   | 方法 | Merged hit-rate | vs TF-IDF |
   |---|---|---|
   | TF-IDF baseline | 83.2% | — |
   | PPMI+SVD (Phase 4) | **86.6%** | **+3.4pp** |
-  | Trained dual encoder | 75.3% | **-7.9pp** |
+  | Trained dual encoder (aux on) | 75.5% | **-7.7pp** |
+  | Trained dual encoder (aux off) | 75.3% | -7.9pp |
 
-- 与 5k 语料消融对比：PPMI 从 +2.4pp → +3.4pp（更多游戏让同义对更密、SVD 更稳）；**trained encoder 从 -2.1pp 反而退到 -7.9pp**。3× 数据没翻盘
-- **解读**：(1) best epoch 仍是 1，说明模型在 epoch 1 就已 saturate，问题在 pair 信号本身不在 model size / 训练时长；(2) 更大 pair set 引入更多弱样本（min_shared=2 的"宽松"匹配在 15k 上变得更宽松）；(3) in-batch negatives 在 14k 唯一游戏间太容易区分，模型学到粗分但丢了细排
-- **portfolio 角度**：这是个**比"持平"更强的故事**——"scale 3× the data, the ablation didn't flip; if anything PPMI extended its lead while contrastive learning lost more ground. This is consistent with Levy & Goldberg (2014): SPPMI matrix factorization captures tag-mediated similarity that InfoNCE on the same input can only approximate."
-- 数据落地：`data/game_embedding.npy` (14270×256) + meta.json + train_log.json
-- 关键文件：`scripts/phase4plus_train.py` + `phase4plus_compare.py`
+- **两个连续 ablation 都没翻盘**：
+  - 5k → 15k 数据扩 3×：trained encoder 从 -2.1pp 退到 -7.9pp（更多 pair 引入更多弱样本）
+  - 加 review/year/owners 辅助特征：merged 只动 +0.2pp（best_epoch 从 1 → 3 是唯一健康信号）
+- **真正的洞察**：bottleneck 不在 input 信息量，**而在 supervision objective 本身**。正样本对仍然是"共享 ≥2 个 high-IDF tag"——TF-IDF cosine 直接编码这个。给模型 baseline 看不到的信号（review / year）也跑不过 baseline，**因为目标函数定义了 ceiling**。要破，得换 supervision 信号（路径 B 蒸馏 Steam "More Like This"；或 behavioral co-ownership 数据）
+- Per-cluster 细节（aux on vs TF-IDF）：narrative +5.7pp（叙事游戏 year/review 是真信号）；action_rpg -27.1pp（aux 反而带噪音）；其他互见
+- **portfolio 故事**：两个干净的负结果证伪"tag-only supervision 下能赢 baseline"。比"跑了个 transformer 然后说赢了"更扎实
+- 数据落地：`data/game_embedding.npy` (14270×256) + meta.json（包含 `aux_dim` / `aux_features` 字段）+ train_log.json
+- 关键文件：`scripts/phase4plus_train.py`（含 `load_aux_features()` + `--no-aux` 对照旗标）+ `phase4plus_compare.py`
 
 ### Phase 4++：语料扩展 5k → 15k（本轮）
 - `phase1_fetch_corpus.py --pages 15` 拉了 14840 个 appid，**14270 ok / 570 errored**（绝大多数 SteamSpy 对下架游戏返空）
 - 对 corpus 大小敏感的所有 artifact 都重建：TF-IDF (14270 × 445)、tag_vocab (437→445)、PPMI tag embedding (445×50)、game embedding (14270×256)、tag_i18n（90.6% 覆盖保持）
 - 副产品：3 个 phase 脚本加 `sys.stdout.reconfigure(encoding="utf-8")`——Windows 默认 GBK 控制台遇到 `®` 等字符会崩，长 fetch 不可接受
 - corpus.db 体积 10.8 MB → 28.9 MB；data/ 总量 ~45 MB（git 仍可接受）
-- **未来翻盘出路**（已记 §10）：(A) 加 review / owners / release_year 作辅助 input 特征；(B) 蒸馏 Steam "More Like This" 列表；(C) 残差混合模型；(D) Masked-tag 预训练
+- **未来翻盘出路**（已记 §10）：~~(A) 加 review / owners / release_year 作辅助 input 特征~~ ←**已试，没翻盘**；(B) 蒸馏 Steam "More Like This" 列表；(C) 残差混合模型；(D) Masked-tag 预训练
 
 ### Phase 6：端到端 Web 产品
 - FastAPI 后端 13 个 endpoint + Steam OpenID + TTL 缓存
@@ -347,14 +352,15 @@ git push                                   # 自动触发 Vercel + Render 重新
 ### Scoreboard
 
 **剩下没做的（按 ROI 排序）：**
-1. **Phase 4+ 翻盘出路**：4 条候选（A 加 review/owners/year 辅助特征 / B 蒸馏 Steam "More Like This" / C 残差混合 / D Masked-tag 预训练）—— 见 Phase 4+ §7 详细
+1. **Phase 4+ 翻盘出路**：~~(A 加 review/owners/year)~~ 已试无效 → 剩 B 蒸馏 Steam "More Like This" / C 残差混合 / D Masked-tag 预训练。**真正的卡点是 supervision objective 本身**（详 §7 Phase 4+）
 2. **Phase 5: Bayesian + multi-query**（数天）—— 让 "multi-query similarity" 从规划变成上线
 3. LLM 文案润色 / 协同过滤 / 价格分析（都是 nice-to-have，不做也无伤）
 
 **已 demote：** Render 冷启动修复 —— 后端用付费档，冷启动不严重，不再列 P1。
 
-**自上次同步以来已完成（3 个里程碑）：**
-- ✅ **语料 5k → 15k**（**本轮**）：14270 ok 游戏、445 tag。PPMI 重建后 +3.4pp（旧 +2.4pp）；trained encoder 反而 -7.9pp（旧 -2.1pp）—— 3× 数据没翻盘，**but it's a stronger negative result for portfolio**（详见 §7 Phase 4+ 重写）
+**自上次同步以来已完成（4 个里程碑）：**
+- ✅ **Path A: 加 review/year/owners 辅助特征**（**本轮**）：merged 75.3% → 75.5%（+0.2pp，落 CI 内）。结论：bottleneck 不在输入，在 supervision objective（详 §7）
+- ✅ 语料 5k → 15k（commit `9f14e57`）：14270 ok 游戏、445 tag。PPMI 重建后 +3.4pp（旧 +2.4pp）；trained encoder 反而 -7.9pp（旧 -2.1pp）
 - ✅ Tag i18n（commit `905f2af`）：Steam 官方 populartags 端点的 en + schinese 按 tagid join，403/445 ≈ 90.6% 覆盖
 - ✅ 品味金句 22 archetype × 2 变体 × en/zh（commit `327915f`）
 

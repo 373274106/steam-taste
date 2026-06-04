@@ -1,6 +1,14 @@
 {
   "model": {
-    "input_dim": 445,
+    "input_dim": 449,
+    "tag_dim": 445,
+    "aux_dim": 4,
+    "aux_features": [
+      "review_ratio",
+      "review_count_log",
+      "owners_log",
+      "year_norm"
+    ],
     "hidden": 512,
     "output_dim": 256,
     "dropout": 0.2
@@ -12,10 +20,10 @@
     "lr": 0.0005,
     "weight_decay": 0.0001,
     "batch_size": 256,
-    "epochs_run": 9,
-    "best_epoch": 1,
+    "epochs_run": 11,
+    "best_epoch": 3,
     "early_stop_metric": "probe_merged",
-    "best_score": 75.26315789473685,
+    "best_score": 75.52631578947368,
     "patience": 8
   },
   "data": {
@@ -31,9 +39,9 @@
   "eval_probe_top5": {
     "baseline_tfidf_strict_pct": 77.89473684210526,
     "baseline_tfidf_merged_pct": 83.15789473684211,
-    "trained_strict_pct": 71.84210526315789,
-    "trained_merged_pct": 75.26315789473685,
-    "delta_strict_pp": -6.05263157894737,
-    "delta_merged_pp": -7.89473684210526
+    "trained_strict_pct": 71.3157894736842,
+    "trained_merged_pct": 75.52631578947368,
+    "delta_strict_pp": -6.578947368421055,
+    "delta_merged_pp": -7.631578947368425
   }
 }

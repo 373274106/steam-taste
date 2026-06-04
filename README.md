@@ -69,15 +69,20 @@ Two self-trained methods on top of the TF-IDF baseline, evaluated on a held-out 
 |---|---|---|---|
 | TF-IDF baseline | 83.2% | — | `/api/game/similar?method=tfidf` |
 | **PPMI + SVD tag embedding** (Phase 4) | **86.6%** | **+3.4 pp** | `/api/game/similar?method=ppmi` ✅ |
-| InfoNCE-trained dual encoder (Phase 4+) | 75.3% | −7.9 pp (outside ±5.0 pp 95% CI) | `/api/game/similar?method=trained` (kept for comparison) |
+| InfoNCE dual encoder, aux on (Phase 4+) | 75.5% | −7.7 pp | `/api/game/similar?method=trained` (kept for comparison) |
+| InfoNCE dual encoder, aux off (ablation) | 75.3% | −7.9 pp | — |
 
-PPMI + SVD remains the clean win — synonyms collapse cleanly (`Rogue-like` ↔ `Rogue-lite` ≈ 0.99, `Deckbuilding` ↔ `Card Battler` ≈ 0.98), and per-cluster breakdown shows strong lifts where the tag vocabulary is fragmented (cozy_life_sim +17.8 pp, narrative +22.9 pp). 3× more games make the co-occurrence matrix denser, so SVD finds tighter synonym structure — PPMI extended its lead from +2.4 pp at 5k.
+PPMI + SVD is the clean win — synonyms collapse cleanly (`Rogue-like` ↔ `Rogue-lite` ≈ 0.99, `Deckbuilding` ↔ `Card Battler` ≈ 0.98), and per-cluster breakdown shows strong lifts where the tag vocabulary is fragmented (cozy_life_sim +17.8 pp, narrative +22.9 pp). 3× more games make the co-occurrence matrix denser, so SVD finds tighter synonym structure — PPMI extended its lead from +2.4 pp at 5k.
 
-The InfoNCE-trained dual encoder went the other way: from a statistical tie at 5k (−2.1 pp, inside CI) to a clear loss at 15k (−7.9 pp, outside CI). **Scaling the data 3× did not flip the ablation; if anything, contrastive learning lost more ground.** The best epoch is still 1 (model saturates immediately), and per-cluster the drop is concentrated on `action_rpg` (−25.9 pp) and `cozy_life_sim` (−11.1 pp) — clusters with rich tag vocabularies where TF-IDF already encodes the relevant overlap precisely. With 14k unique games in the InfoNCE batch, negatives become semantically diverse enough that the model learns coarse separation but loses the fine top-5 ranking the probe measures.
+The InfoNCE-trained dual encoder went the other way: from a statistical tie at 5k (−2.1 pp, inside CI) to a clear loss at 15k (−7.9 pp, outside CI). **Scaling the data 3× did not flip the ablation; if anything, contrastive learning lost more ground.** Per-cluster the drop is concentrated on `action_rpg` (−25.9 pp) — a tag-dense cluster where TF-IDF already encodes the relevant overlap precisely.
 
-This is Levy & Goldberg (2014) showing up empirically: word2vec ≈ SPPMI matrix factorization, and on a curated user-tag corpus the SPPMI side wins outright. Adding model capacity or training data doesn't help — the **ceiling here is the signal in the input, not the architecture**.
+To test whether the gap could be closed by giving the encoder information the baseline cannot see, we added four auxiliary input features: `review_ratio`, `log(review_count)`, `log(owners)`, and a normalized `release_year`. The encoder now sees 449 dimensions vs the baseline's 445. **The merged hit-rate moved from 75.3% to 75.5% — no statistically meaningful change.** The only honest signal is that `best_epoch` shifted from 1 to 3 (the auxiliary features delay collapse) and narrative cluster lifted (+5.7 pp; year/review matters for story-driven games), but the overall gap stayed.
 
-**That negative result is the point.** Honest scaling experiments are a stronger portfolio signal than "I tried a Transformer and it worked." Paths to escape the ceiling (auxiliary features beyond tags; distillation from Steam's own "More Like This"; residual hybrid; masked-tag pretext) are noted in [HANDOFF §7 Phase 4+](HANDOFF.md) for future exploration.
+The takeaway: **the ceiling isn't input information, it's the supervision objective**. Positive pairs are defined as "games sharing ≥2 high-IDF tags" — exactly what TF-IDF cosine encodes natively. Any encoder trained on that target asymptotes to the baseline's tag-overlap signal, regardless of what extra features go in or how much data piles up. This is Levy & Goldberg (2014) showing up empirically: word2vec ≈ SPPMI matrix factorization on the same input.
+
+**Two consecutive negative results — scale didn't help, auxiliary features didn't help — together falsify the "tag-only supervision can beat the baseline" hypothesis.** Escaping the ceiling requires a different supervision signal, not a fancier encoder. Concrete options noted in [HANDOFF §7 Phase 4+](HANDOFF.md): distill Steam's own "More Like This" rankings, mine behavioral co-ownership pairs, residual hybrid, or masked-tag pretraining.
+
+The repo keeps both encoder versions (`aux on` is the production embedding; `aux off` reproducible via `--no-aux`) plus the trained-encoder retrieval endpoint, because the honest negative result *is* the portfolio signal here.
 
 Both training scripts in [`scripts/`](scripts/) — PPMI is ~100 lines of numpy, the InfoNCE encoder is [`phase4plus_train.py`](scripts/phase4plus_train.py).
 

@@ -70,6 +70,13 @@ LOG_PATH = DATA_DIR / "game_embedding_train_log.json"
 
 PROBE_CACHE_PATH = HERE / "probe_games_cache.json"
 
+# Auxiliary feature names — what the encoder sees beyond the 445-d TF-IDF.
+# These are signals the TF-IDF baseline cannot use (it sees tags only), so
+# any lift the trained encoder gets here is a real information gain rather
+# than just a re-projection of the baseline's input.
+AUX_FEATURE_NAMES = ["review_ratio", "review_count_log", "owners_log", "year_norm"]
+AUX_DIM = len(AUX_FEATURE_NAMES)
+
 
 # ============================================================
 # Data
@@ -87,6 +94,53 @@ def load_corpus_tag_sets() -> tuple[list[int], dict[int, set[str]], dict[str, in
             by_appid[appid].add(tag)
             df[tag] += 1
     return appid_order, dict(by_appid), dict(df)
+
+
+def load_aux_features(appid_order: list[int]) -> np.ndarray:
+    """Return an N x AUX_DIM dense float32 matrix, z-score normalized per column.
+
+    Pulls review / owners / year signals straight from corpus.db. These exist
+    for every fetch_status='ok' game; missing values get neutral defaults
+    (review_ratio=0.5, log_counts=0, year=median) before z-scoring.
+    """
+    import re
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.execute(
+        "SELECT appid, positive_reviews, negative_reviews, owners_low, owners_high, release_date "
+        "FROM games"
+    )
+    by_appid: dict[int, tuple] = {}
+    for appid, pos, neg, low, high, date in cur.fetchall():
+        by_appid[appid] = (pos or 0, neg or 0, low or 0, high or 0, date or "")
+
+    # Year parsing — same regex as backend/taste_engine._parse_year
+    year_re = re.compile(r"\b(19|20)\d{2}\b")
+    years: list[float | None] = []
+    for appid in appid_order:
+        _, _, _, _, date = by_appid.get(appid, (0, 0, 0, 0, ""))
+        m = year_re.search(date)
+        years.append(float(m.group(0)) if m else None)
+    parseable = [y for y in years if y is not None]
+    year_median = float(np.median(parseable)) if parseable else 2015.0
+
+    feats = np.zeros((len(appid_order), AUX_DIM), dtype=np.float64)
+    for i, appid in enumerate(appid_order):
+        pos, neg, low, high, _ = by_appid.get(appid, (0, 0, 0, 0, ""))
+        total = pos + neg
+        feats[i, 0] = pos / total if total > 0 else 0.5
+        feats[i, 1] = math.log1p(total)
+        feats[i, 2] = math.log1p((low + high) / 2)
+        y = years[i] if years[i] is not None else year_median
+        feats[i, 3] = (y - year_median) / 10.0  # ~one-decade scale
+
+    # Z-score per column so the encoder sees aux at similar magnitude to TF-IDF
+    mean = feats.mean(axis=0)
+    std = feats.std(axis=0)
+    std[std < 1e-6] = 1.0
+    feats = (feats - mean) / std
+
+    return feats.astype(np.float32)
 
 
 def load_probe_appids() -> set[int]:
@@ -160,19 +214,36 @@ def build_positive_pairs(
 
 
 class PairDataset(Dataset):
-    """Yields (game_a_vec, game_b_vec) tensors."""
+    """Yields (game_a_vec, game_b_vec) tensors.
 
-    def __init__(self, tfidf: sparse.csr_matrix, pairs: list[tuple[int, int]]):
+    If aux is provided, each yielded vector is [tfidf_row | aux_row] -- the
+    encoder sees auxiliary features (reviews, owners, year) the TF-IDF
+    baseline cannot access.
+    """
+
+    def __init__(
+        self,
+        tfidf: sparse.csr_matrix,
+        pairs: list[tuple[int, int]],
+        aux: np.ndarray | None = None,
+    ):
         self.tfidf = tfidf
         self.pairs = pairs
+        self.aux = aux
 
     def __len__(self) -> int:
         return len(self.pairs)
 
+    def _row(self, idx: int) -> np.ndarray:
+        tf = np.asarray(self.tfidf[idx].todense(), dtype=np.float32).flatten()
+        if self.aux is None:
+            return tf
+        return np.concatenate([tf, self.aux[idx]])
+
     def __getitem__(self, idx: int):
         i, j = self.pairs[idx]
-        a = torch.from_numpy(np.asarray(self.tfidf[i].todense(), dtype=np.float32).flatten())
-        b = torch.from_numpy(np.asarray(self.tfidf[j].todense(), dtype=np.float32).flatten())
+        a = torch.from_numpy(self._row(i))
+        b = torch.from_numpy(self._row(j))
         return a, b
 
 
@@ -271,16 +342,25 @@ def probe_hit_rate(emb: np.ndarray, probe: list[dict], k: int = 5) -> tuple[floa
 # ============================================================
 
 @torch.no_grad()
-def encode_all(model: GameEncoder, tfidf: sparse.csr_matrix, device, batch_size: int = 512
-               ) -> np.ndarray:
+def encode_all(
+    model: GameEncoder,
+    tfidf: sparse.csr_matrix,
+    device,
+    aux: np.ndarray | None = None,
+    batch_size: int = 512,
+) -> np.ndarray:
     model.eval()
     N = tfidf.shape[0]
     chunks = []
     for start in range(0, N, batch_size):
         end = min(start + batch_size, N)
-        x = torch.from_numpy(np.asarray(tfidf[start:end].todense(), dtype=np.float32))
-        x = x.to(device)
-        z = model(x).cpu().numpy()
+        x_tf = np.asarray(tfidf[start:end].todense(), dtype=np.float32)
+        if aux is not None:
+            x = np.concatenate([x_tf, aux[start:end]], axis=1)
+        else:
+            x = x_tf
+        x_t = torch.from_numpy(x).to(device)
+        z = model(x_t).cpu().numpy()
         chunks.append(z)
     model.train()
     return np.concatenate(chunks, axis=0)
@@ -317,6 +397,8 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--quick", action="store_true",
                     help="5 epochs for fast sanity check")
+    ap.add_argument("--no-aux", action="store_true",
+                    help="disable aux features (pure TF-IDF input; baseline-comparable ablation)")
     args = ap.parse_args()
 
     if args.quick:
@@ -336,6 +418,15 @@ def main() -> None:
     V = tfidf.shape[1]
     N = tfidf.shape[0]
     print(f"  corpus: {N} games x {V} tags")
+
+    if args.no_aux:
+        aux = None
+        input_dim = V
+        print("  aux features: DISABLED (--no-aux)")
+    else:
+        aux = load_aux_features(appid_order)
+        input_dim = V + AUX_DIM
+        print(f"  aux features: {AUX_DIM}-d ({', '.join(AUX_FEATURE_NAMES)})")
 
     probe_appids = load_probe_appids()
     print(f"  probe set (held out): {len(probe_appids)} games")
@@ -359,17 +450,17 @@ def main() -> None:
     train_pairs = all_pairs[n_val:]
     print(f"  train: {len(train_pairs)}  val: {len(val_pairs)}")
 
-    train_ds = PairDataset(tfidf, train_pairs)
-    val_ds = PairDataset(tfidf, val_pairs)
+    train_ds = PairDataset(tfidf, train_pairs, aux=aux)
+    val_ds = PairDataset(tfidf, val_pairs, aux=aux)
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
                               num_workers=0, drop_last=True)
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False,
                             num_workers=0, drop_last=False)
 
     # ----- Model -----
-    model = GameEncoder(V=V, hidden=args.hidden, dim=args.dim, dropout=args.dropout).to(device)
+    model = GameEncoder(V=input_dim, hidden=args.hidden, dim=args.dim, dropout=args.dropout).to(device)
     n_params = sum(p.numel() for p in model.parameters())
-    print(f"\nModel: {V} -> {args.hidden} -> {args.dim}  ({n_params:,} params)")
+    print(f"\nModel: {input_dim} -> {args.hidden} -> {args.dim}  ({n_params:,} params)")
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
@@ -437,7 +528,7 @@ def main() -> None:
         val_loss = val_loss_sum / max(1, n_val_batches)
 
         # Probe metrics (cheap — 180 games)
-        full_emb = encode_all(model, tfidf, device)
+        full_emb = encode_all(model, tfidf, device, aux=aux)
         s_probe, m_probe = probe_hit_rate(full_emb, probe_eval, k=5)
 
         elapsed = time.time() - t_start
@@ -476,7 +567,7 @@ def main() -> None:
                 break
 
     if best_emb is None:
-        best_emb = encode_all(model, tfidf, device)
+        best_emb = encode_all(model, tfidf, device, aux=aux)
         best_epoch = args.epochs
 
     # ----- Final eval -----
@@ -493,7 +584,10 @@ def main() -> None:
     np.save(EMBED_PATH, best_emb.astype(np.float32))
     META_PATH.write_text(json.dumps({
         "model": {
-            "input_dim": V,
+            "input_dim": input_dim,
+            "tag_dim": V,
+            "aux_dim": 0 if args.no_aux else AUX_DIM,
+            "aux_features": [] if args.no_aux else AUX_FEATURE_NAMES,
             "hidden": args.hidden,
             "output_dim": args.dim,
             "dropout": args.dropout,
