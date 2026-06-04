@@ -3,9 +3,11 @@
 > **A Steam taste lens, not another Steam recommender.**
 > Reads your library the way an editor reads a magazine archive — finds the shape of your taste, surfaces the games you'd actually love, and quietly points out the ones you bought but never started.
 
-**Live**: [playprint](https://steam-taste.vercel.app) · **API**: [docs](https://steam-taste.onrender.com/docs)
-
-> ⏳ The backend lives on Render's free tier — first request after idle takes ~30s while the dyno warms up. Subsequent requests are instant.
+<p align="center">
+  <a href="https://steam-taste.vercel.app"><strong>► Open Playprint</strong></a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="https://steam-taste.onrender.com/docs">API docs</a>
+</p>
 
 <p align="center">
   <img src="screenshots/result_taste_desktop.png" width="720" alt="Act I — Taste profile with self-drawn SVG radar and clustered library cards" />

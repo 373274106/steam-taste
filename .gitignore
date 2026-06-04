@@ -35,8 +35,11 @@ scripts/probe_results.csv
 scripts/diagnose_output.txt
 scripts/real_user_output*.txt
 
-# Visual review screenshots (regenerated from screenshot_*.py scripts)
-screenshots/
+# Visual review screenshots (regenerated from screenshot_*.py scripts).
+# Keep just the two used in README.md; everything else is WIP.
+screenshots/*
+!screenshots/result_taste_desktop.png
+!screenshots/result_regret_desktop.png
 
 # Frontend
 frontend/node_modules/
