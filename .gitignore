@@ -35,6 +35,9 @@ scripts/probe_results.csv
 scripts/diagnose_output.txt
 scripts/real_user_output*.txt
 
+# Personal notes, not for the public repo
+RETROSPECTIVE.md
+
 # Visual review screenshots (regenerated from screenshot_*.py scripts).
 # Keep just the two used in README.md; everything else is WIP.
 screenshots/*

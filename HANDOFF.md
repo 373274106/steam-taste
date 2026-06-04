@@ -22,7 +22,7 @@ Steam 玩家品味透镜：基于 TF-IDF 标签相似度的多层推荐引擎，
 
 | 类型 | URL |
 |---|---|
-| **前端（生产）** | https://steam-taste.vercel.app |
+| **前端（生产）** | https://playprint.vercel.app |
 | **后端（生产）** | https://steam-taste.onrender.com |
 | **后端健康检查** | https://steam-taste.onrender.com/api/health |
 | **后端 API 文档（Swagger）** | https://steam-taste.onrender.com/docs |
@@ -30,7 +30,7 @@ Steam 玩家品味透镜：基于 TF-IDF 标签相似度的多层推荐引擎，
 | **本地工作目录** | `e:\study\project` |
 
 ### 测试入口
-- Demo 模式：直接点 https://steam-taste.vercel.app 上的 demo 按钮，不需要登录
+- Demo 模式：直接点 https://playprint.vercel.app 上的 demo 按钮，不需要登录
 - 真用户：贴 SteamID `76561198098881759`（HexQuarter，1095 款游戏的真实测试账号）
 
 ---
@@ -67,7 +67,7 @@ VITE_API_BASE = https://steam-taste.onrender.com
 ### Render 环境变量
 ```
 STEAM_API_KEY = 同 .env
-FRONTEND_BASE = https://steam-taste.vercel.app   (无尾斜杠！代码已 normalize 但还是别加)
+FRONTEND_BASE = https://playprint.vercel.app    (无尾斜杠！代码已 normalize 但还是别加)
 BACKEND_BASE  = https://steam-taste.onrender.com
 ```
 

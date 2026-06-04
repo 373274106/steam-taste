@@ -769,7 +769,7 @@ only in offline training scripts.
 
 ## 14. Current Status & Next Step
 
-**项目已上线**：[playprint](https://steam-taste.vercel.app) + [API](https://steam-taste.onrender.com)。
+**项目已上线**：[playprint](https://playprint.vercel.app) + [API](https://steam-taste.onrender.com)。
 Phase 0 → Phase 4+ → Phase 6.6 全部完成，详见 §9。
 
 **当前最高优先级**：portfolio writeup。

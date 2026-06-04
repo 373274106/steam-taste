@@ -4,7 +4,7 @@
 > Reads your library the way an editor reads a magazine archive — finds the shape of your taste, surfaces the games you'd actually love, and quietly points out the ones you bought but never started.
 
 <p align="center">
-  <a href="https://steam-taste.vercel.app"><strong>► Open Playprint</strong></a>
+  <a href="https://playprint.vercel.app"><strong>► Open Playprint</strong></a>
   &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="https://steam-taste.onrender.com/docs">API docs</a>
 </p>
