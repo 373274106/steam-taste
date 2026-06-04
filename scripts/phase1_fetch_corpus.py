@@ -31,6 +31,15 @@ from pathlib import Path
 import requests
 
 
+# Windows default console codec (gbk / cp936) chokes on game names with
+# non-ASCII glyphs like (R) or trademark signs. Force utf-8 with a safe
+# fallback so a logged name never crashes the long fetch.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError):
+    pass
+
+
 HERE = Path(__file__).parent
 DATA_DIR = HERE.parent / "data"
 DB_PATH = DATA_DIR / "corpus.db"

@@ -142,17 +142,17 @@ e:\study\project\
 │   ├── itad_match_probe.py          # Phase 0 早期探针（已废弃）
 │   └── screenshot_*.py              # Playwright 截图脚本（Home / Result 状态图）
 │
-└── data/                            # 已 commit 进 git
-    ├── corpus.db                    # 4985 款游戏元数据 + tags
-    ├── tfidf.npz                    # 4985 × 437 sparse TF-IDF 矩阵
+└── data/                            # 已 commit 进 git (~45 MB 总量)
+    ├── corpus.db                    # 14270 款游戏元数据 + tags (29 MB)
+    ├── tfidf.npz                    # 14270 × 445 sparse TF-IDF 矩阵
     ├── tag_vocab.json
     ├── appid_order.json
     ├── inverted_index.json
-    ├── tag_embedding.npy            # Phase 4：437 × 50 PPMI + SVD
+    ├── tag_embedding.npy            # Phase 4：445 × 50 PPMI + SVD
     ├── tag_embedding_meta.json      # 配置 + 同义词探针结果
     ├── tag_i18n.json                # en → zh tag 名字映射（Steam 官方 populartags 翻译）
-    ├── game_embedding.npy           # Phase 4+：4985 × 256 trained dual encoder
-    ├── game_embedding_meta.json     # 训练超参 + 消融结果（trained -2.1pp vs TF-IDF）
+    ├── game_embedding.npy           # Phase 4+：14270 × 256 trained dual encoder
+    ├── game_embedding_meta.json     # 训练超参 + 消融结果（trained -7.9pp vs TF-IDF）
     └── game_embedding_train_log.json
 ```
 
@@ -218,18 +218,34 @@ aa3d4e1  Polish: mobile responsive + smart error states + demo card + fade-in
 
 ### Phase 4：自训练 Tag Co-occurrence Embedding（PPMI + SVD）
 - 从 corpus 构建 tag-tag 共现矩阵 → PPMI 归一化 → numpy SVD 降到 50 维
-- 验证：`Rogue-like` ↔ `Rogue-lite` ↔ `Action Roguelike` cosine ≈ 0.85-0.95（同义词自动合并）
-- 生产已用：`/api/game/similar?method=ppmi`，比 TF-IDF 基线 **+2.4pp merged hit rate**（83.2 → 85.6）
-- 数据落地：`data/tag_embedding.npy` + meta.json
+- 验证：`Rogue-like` ↔ `Rogue-lite` ≈ 0.99（同义词自动合并）；`Deckbuilding` ↔ `Card Battler` ≈ 0.98
+- 生产已用：`/api/game/similar?method=ppmi`，比 TF-IDF 基线 **+3.4pp merged hit rate**（83.2 → 86.6，**15k 语料**）
+- 数据落地：`data/tag_embedding.npy` (445×50) + meta.json
 - 关键文件：`scripts/phase4_build_tag_embedding.py`，运行时入口 `TasteEngine.tag_neighbors()` / `.game_dense_vec()`
 
 ### Phase 4+：Trained Dual-Encoder（InfoNCE）+ 三路检索消融
-- PyTorch 训练 MLP encoder（V → 512 → 256，dropout + L2 norm），InfoNCE in-batch negatives，cosine LR + early stop
-- 正样本：共享 ≥2 个 high-IDF tag 的游戏对（10.6 万对）；Phase 0 probe 集 75 款 held out 评估（84 个相关 appid 全部从训练对中剔除）
-- **消融结果（诚实）**：trained encoder 在 probe 集上 81.1% merged，**比 TF-IDF 基线 (83.2%) 低 2.1pp，落在 ±5.1pp 95% CI 内 → 严格说是"持平"而非"输"**；比 PPMI (85.6%) 低 4.5pp（这个差距才超出 CI）
-- 解读：~5000 款小语料 + 已经"用户众标提炼过"的高质量 tag 信号下，对比学习无法与矩阵分解显著区分；这是诚实的工程报告，**就是 portfolio 卖点**——"实验对比 + 不夸大"
-- 数据落地：`data/game_embedding.npy` + meta.json + train_log.json
+- PyTorch 训练 MLP encoder（V → 512 → 256，dropout 0.2 + L2 norm），InfoNCE in-batch negatives，cosine LR + early stop（监控 probe_merged）
+- 正样本：共享 ≥2 个 high-IDF tag 的游戏对（**14k 语料下 91 万对**，5k 时 10.6 万对）；Phase 0 probe 集 75 款 held out 评估（84 个相关 appid 全部从训练对中剔除）
+- **消融结果（15k 语料 — 重训后诚实更新）**：
+
+  | 方法 | Merged hit-rate | vs TF-IDF |
+  |---|---|---|
+  | TF-IDF baseline | 83.2% | — |
+  | PPMI+SVD (Phase 4) | **86.6%** | **+3.4pp** |
+  | Trained dual encoder | 75.3% | **-7.9pp** |
+
+- 与 5k 语料消融对比：PPMI 从 +2.4pp → +3.4pp（更多游戏让同义对更密、SVD 更稳）；**trained encoder 从 -2.1pp 反而退到 -7.9pp**。3× 数据没翻盘
+- **解读**：(1) best epoch 仍是 1，说明模型在 epoch 1 就已 saturate，问题在 pair 信号本身不在 model size / 训练时长；(2) 更大 pair set 引入更多弱样本（min_shared=2 的"宽松"匹配在 15k 上变得更宽松）；(3) in-batch negatives 在 14k 唯一游戏间太容易区分，模型学到粗分但丢了细排
+- **portfolio 角度**：这是个**比"持平"更强的故事**——"scale 3× the data, the ablation didn't flip; if anything PPMI extended its lead while contrastive learning lost more ground. This is consistent with Levy & Goldberg (2014): SPPMI matrix factorization captures tag-mediated similarity that InfoNCE on the same input can only approximate."
+- 数据落地：`data/game_embedding.npy` (14270×256) + meta.json + train_log.json
 - 关键文件：`scripts/phase4plus_train.py` + `phase4plus_compare.py`
+
+### Phase 4++：语料扩展 5k → 15k（本轮）
+- `phase1_fetch_corpus.py --pages 15` 拉了 14840 个 appid，**14270 ok / 570 errored**（绝大多数 SteamSpy 对下架游戏返空）
+- 对 corpus 大小敏感的所有 artifact 都重建：TF-IDF (14270 × 445)、tag_vocab (437→445)、PPMI tag embedding (445×50)、game embedding (14270×256)、tag_i18n（90.6% 覆盖保持）
+- 副产品：3 个 phase 脚本加 `sys.stdout.reconfigure(encoding="utf-8")`——Windows 默认 GBK 控制台遇到 `®` 等字符会崩，长 fetch 不可接受
+- corpus.db 体积 10.8 MB → 28.9 MB；data/ 总量 ~45 MB（git 仍可接受）
+- **未来翻盘出路**（已记 §10）：(A) 加 review / owners / release_year 作辅助 input 特征；(B) 蒸馏 Steam "More Like This" 列表；(C) 残差混合模型；(D) Masked-tag 预训练
 
 ### Phase 6：端到端 Web 产品
 - FastAPI 后端 13 个 endpoint + Steam OpenID + TTL 缓存
@@ -331,14 +347,15 @@ git push                                   # 自动触发 Vercel + Render 重新
 ### Scoreboard
 
 **剩下没做的（按 ROI 排序）：**
-1. **扩 corpus 5k → 15k**（一个周末）—— 解决长尾老游戏推荐 + 给 Phase 4+ 翻盘机会
+1. **Phase 4+ 翻盘出路**：4 条候选（A 加 review/owners/year 辅助特征 / B 蒸馏 Steam "More Like This" / C 残差混合 / D Masked-tag 预训练）—— 见 Phase 4+ §7 详细
 2. **Phase 5: Bayesian + multi-query**（数天）—— 让 "multi-query similarity" 从规划变成上线
 3. LLM 文案润色 / 协同过滤 / 价格分析（都是 nice-to-have，不做也无伤）
 
 **已 demote：** Render 冷启动修复 —— 后端用付费档，冷启动不严重，不再列 P1。
 
-**自上次同步以来已完成（2 个 commit）：**
-- ✅ Tag i18n（**本轮**）：Steam 官方 populartags 端点的 en + schinese 按 tagid join，396/437 ≈ 90.6% 覆盖，剩下基本是 brand 类（LEGO、Warhammer 40K 等）EN fallback 可接受
+**自上次同步以来已完成（3 个里程碑）：**
+- ✅ **语料 5k → 15k**（**本轮**）：14270 ok 游戏、445 tag。PPMI 重建后 +3.4pp（旧 +2.4pp）；trained encoder 反而 -7.9pp（旧 -2.1pp）—— 3× 数据没翻盘，**but it's a stronger negative result for portfolio**（详见 §7 Phase 4+ 重写）
+- ✅ Tag i18n（commit `905f2af`）：Steam 官方 populartags 端点的 en + schinese 按 tagid join，403/445 ≈ 90.6% 覆盖
 - ✅ 品味金句 22 archetype × 2 变体 × en/zh（commit `327915f`）
 
 **已完成（自上次同步以来 6 个 commit）：**

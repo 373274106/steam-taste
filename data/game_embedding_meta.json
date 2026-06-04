@@ -1,6 +1,6 @@
 {
   "model": {
-    "input_dim": 437,
+    "input_dim": 445,
     "hidden": 512,
     "output_dim": 256,
     "dropout": 0.2
@@ -15,25 +15,25 @@
     "epochs_run": 9,
     "best_epoch": 1,
     "early_stop_metric": "probe_merged",
-    "best_score": 81.06666666666666,
+    "best_score": 75.26315789473685,
     "patience": 8
   },
   "data": {
-    "corpus_games": 4985,
-    "vocab_size": 437,
-    "positive_pairs_total": 106600,
-    "train_pairs": 95940,
-    "val_pairs": 10660,
+    "corpus_games": 14270,
+    "vocab_size": 445,
+    "positive_pairs_total": 911354,
+    "train_pairs": 820219,
+    "val_pairs": 91135,
     "min_shared_high_idf_tags": 2,
     "high_idf_quantile": 0.75,
     "probe_excluded": 84
   },
   "eval_probe_top5": {
-    "baseline_tfidf_strict_pct": 77.60000000000001,
-    "baseline_tfidf_merged_pct": 83.2,
-    "trained_strict_pct": 76.53333333333333,
-    "trained_merged_pct": 81.06666666666666,
-    "delta_strict_pp": -1.066666666666677,
-    "delta_merged_pp": -2.13333333333334
+    "baseline_tfidf_strict_pct": 77.89473684210526,
+    "baseline_tfidf_merged_pct": 83.15789473684211,
+    "trained_strict_pct": 71.84210526315789,
+    "trained_merged_pct": 75.26315789473685,
+    "delta_strict_pp": -6.05263157894737,
+    "delta_merged_pp": -7.89473684210526
   }
 }

@@ -37,6 +37,7 @@ import json
 import math
 import random
 import sqlite3
+import sys
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -47,6 +48,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from scipy import sparse
 from torch.utils.data import DataLoader, Dataset
+
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError):
+    pass
 
 
 HERE = Path(__file__).parent

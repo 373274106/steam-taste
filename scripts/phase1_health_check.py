@@ -15,10 +15,18 @@ import argparse
 import json
 import random
 import sqlite3
+import sys
 from pathlib import Path
 
 import numpy as np
 from scipy import sparse
+
+
+# Same Windows GBK issue as phase1_fetch_corpus: game names with (R) etc.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError):
+    pass
 
 
 HERE = Path(__file__).parent
